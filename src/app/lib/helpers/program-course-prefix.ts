@@ -2,7 +2,7 @@
 
 export const PROGRAM_PREFIX_MAP: Record<string, string[]> = {
   "computer science": ["ICS"],
-  "information & computer sciences": ["ICS"],
+  "information and computer sciences": ["ICS"],
   "electrical engineering": ["EE", "ECE"],
   "business administration": ["BUS", "FIN", "MKT"],
   "hospitality management": ["HTM"],

@@ -354,8 +354,9 @@ const PathwayVisualization: React.FC<{ data: PathwayData }> = ({ data }) => {
       },
     }));
 
-    const buildKeywords = () => {
-      const keywords = new Set<string>();
+    const buildSearchKeywords = () => {
+      const keywordSet = new Set<string>();
+      const deptKeywordSet = new Set<string>();
 
       const sanitize = (value: string) =>
         value
@@ -363,16 +364,17 @@ const PathwayVisualization: React.FC<{ data: PathwayData }> = ({ data }) => {
           .replace(/-/g, " ")
           .trim();
 
-      const addKeyword = (value?: string) => {
+      const addProgramKeyword = (value?: string) => {
         if (!value) return;
-        const cleaned = sanitize(value);
+        const cleaned = sanitize(value).toLowerCase();
         if (cleaned.length >= 3) {
-          keywords.add(cleaned.toLowerCase());
+          keywordSet.add(cleaned);
+          deptKeywordSet.add(cleaned);
         }
       };
 
-      addKeyword(programName);
-      variants?.forEach(addKeyword);
+      addProgramKeyword(programName);
+      variants?.forEach(addProgramKeyword);
 
       const normalizedProgram = sanitize(programName).toLowerCase();
       const variantMatches =
@@ -389,23 +391,34 @@ const PathwayVisualization: React.FC<{ data: PathwayData }> = ({ data }) => {
         if (matchesProgram) {
           prefixes.forEach(prefix => {
             if (prefix?.length) {
-              keywords.add(prefix.toLowerCase());
+              keywordSet.add(prefix.toLowerCase());
             }
           });
         }
       });
 
-      return Array.from(keywords).slice(0, 8);
+      const keywords = Array.from(keywordSet).slice(0, 8);
+      const deptKeywords = Array.from(deptKeywordSet).slice(0, 5);
+
+      return { keywords, deptKeywords };
     };
 
-    const keywords = buildKeywords();
+    const { keywords, deptKeywords } = buildSearchKeywords();
+    const primaryKeyword =
+      keywords.find(Boolean) ||
+      programName.toLowerCase().trim() ||
+      programName;
+    const keywordExtras = keywords.filter(
+      keyword => keyword && keyword !== primaryKeyword
+    );
 
     try {
       const params = new URLSearchParams();
-      params.set("q", keywords[0] || programName);
+      params.set("q", primaryKeyword);
       params.set("limit", "100");
       params.append("campus", campus);
-      keywords.slice(1).forEach(keyword => params.append("keyword", keyword));
+      keywordExtras.forEach(keyword => params.append("keyword", keyword));
+      deptKeywords.forEach(dept => params.append("dept", dept));
 
       const response = await fetch(
         `/api/programs-courses?${params.toString()}`
