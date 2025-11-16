@@ -50,6 +50,8 @@ interface CollegeCourse {
   num_units?: string;
   dept_name?: string;
   campus?: string;
+  course_desc?: string;
+  metadata?: string;
 }
 
 interface PathwayData {
@@ -77,6 +79,12 @@ interface PathwayData {
     totalCollegeCampuses?: number;
     totalCareerPaths?: number;
   };
+}
+
+interface CampusCourseState {
+  loading: boolean;
+  error: string | null;
+  courses: CollegeCourse[];
 }
 
 const MarkdownRenderer: React.FC<{ content: string; className?: string }> = ({
@@ -298,11 +306,11 @@ const PathwayVisualization: React.FC<{ data: PathwayData }> = ({ data }) => {
   const [expandedCourseLists, setExpandedCourseLists] = useState<Set<string>>(
     new Set()
   );
-  const [collegeCourseLists, setCollegeCourseLists] = useState<
-    Record<
-      string,
-      { loading: boolean; error: string | null; courses: CollegeCourse[] }
-    >
+  const [campusCourseLists, setCampusCourseLists] = useState<
+    Record<string, Record<string, CampusCourseState>>
+  >({});
+  const [expandedCampusCourseLists, setExpandedCampusCourseLists] = useState<
+    Record<string, Set<string>>
   >({});
 
   const toggleProgramExpanded = (programName: string) => {
@@ -329,17 +337,20 @@ const PathwayVisualization: React.FC<{ data: PathwayData }> = ({ data }) => {
     });
   };
 
-  const fetchCoursesForProgram = async (
+  const fetchCoursesForCampus = async (
     programName: string,
-    campuses: string[],
+    campus: string,
     variants?: string[]
   ) => {
-    setCollegeCourseLists(prev => ({
+    setCampusCourseLists(prev => ({
       ...prev,
       [programName]: {
-        loading: true,
-        error: null,
-        courses: prev[programName]?.courses || [],
+        ...(prev[programName] || {}),
+        [campus]: {
+          loading: true,
+          error: null,
+          courses: prev[programName]?.[campus]?.courses || [],
+        },
       },
     }));
 
@@ -368,11 +379,13 @@ const PathwayVisualization: React.FC<{ data: PathwayData }> = ({ data }) => {
         variants
           ?.map(variant => sanitize(variant).toLowerCase())
           .filter(Boolean) || [];
+
       Object.entries(PROGRAM_PREFIX_MAP).forEach(([key, prefixes]) => {
-        const matchKey = key.toLowerCase(); // normalize key
+        const matchKey = key.toLowerCase();
         const matchesProgram =
-          normalizedProgram.includes(matchKey) || // check program name
-          variantMatches.some(variant => variant.includes(matchKey)); // check variants
+          normalizedProgram.includes(matchKey) ||
+          variantMatches.some(variant => variant.includes(matchKey));
+
         if (matchesProgram) {
           prefixes.forEach(prefix => {
             if (prefix?.length) {
@@ -381,6 +394,7 @@ const PathwayVisualization: React.FC<{ data: PathwayData }> = ({ data }) => {
           });
         }
       });
+
       return Array.from(keywords).slice(0, 8);
     };
 
@@ -390,7 +404,7 @@ const PathwayVisualization: React.FC<{ data: PathwayData }> = ({ data }) => {
       const params = new URLSearchParams();
       params.set("q", keywords[0] || programName);
       params.set("limit", "100");
-      campuses.forEach(campus => params.append("campus", campus));
+      params.append("campus", campus);
       keywords.slice(1).forEach(keyword => params.append("keyword", keyword));
 
       const response = await fetch(
@@ -404,46 +418,77 @@ const PathwayVisualization: React.FC<{ data: PathwayData }> = ({ data }) => {
 
       const data = await response.json();
 
-      setCollegeCourseLists(prev => ({
+      setCampusCourseLists(prev => ({
         ...prev,
         [programName]: {
-          loading: false,
-          error: null,
-          courses: Array.isArray(data.results) ? data.results : [],
+          ...(prev[programName] || {}),
+          [campus]: {
+            loading: false,
+            error: null,
+            courses: Array.isArray(data.results) ? data.results : [],
+          },
         },
       }));
     } catch (error) {
-      setCollegeCourseLists(prev => ({
+      setCampusCourseLists(prev => ({
         ...prev,
         [programName]: {
-          loading: false,
-          error:
-            error instanceof Error
-              ? error.message
-              : "An unknown error occurred.",
-          courses: [],
+          ...(prev[programName] || {}),
+          [campus]: {
+            loading: false,
+            error:
+              error instanceof Error
+                ? error.message
+                : "An unknown error occurred.",
+            courses: [],
+          },
         },
       }));
     }
   };
 
-  const toggleCourseList = (
+  const toggleCampusCourseList = (
     programName: string,
-    campuses: string[],
+    campus: string,
     variants?: string[]
   ) => {
+    const isCurrentlyExpanded =
+      expandedCampusCourseLists[programName]?.has(campus) ?? false;
+
+    if (!isCurrentlyExpanded && !campusCourseLists[programName]?.[campus]) {
+      fetchCoursesForCampus(programName, campus, variants);
+    }
+
+    setExpandedCampusCourseLists(prev => {
+      const next = { ...prev };
+      const currentSet = new Set(prev[programName] ?? []);
+
+      if (currentSet.has(campus)) {
+        currentSet.delete(campus);
+      } else {
+        currentSet.add(campus);
+      }
+
+      next[programName] = currentSet;
+      return next;
+    });
+  };
+
+  const toggleCourseList = (programName: string) => {
     setExpandedCourseLists(prev => {
       const newSet = new Set(prev);
       if (newSet.has(programName)) {
         newSet.delete(programName);
       } else {
         newSet.add(programName);
-        if (!collegeCourseLists[programName]) {
-          fetchCoursesForProgram(programName, campuses, variants);
-        }
       }
       return newSet;
     });
+  };
+
+  const formatCourseCountLabel = (count?: number) => {
+    if (!count) return "View courses";
+    return count + " course" + (count !== 1 ? "s" : "");
   };
 
   const renderCourseList = (
@@ -451,17 +496,60 @@ const PathwayVisualization: React.FC<{ data: PathwayData }> = ({ data }) => {
     campuses: string[],
     variants?: string[]
   ) => {
-    const state = collegeCourseLists[programName];
-
-    if (!state) {
-      return (
-        <p className="text-xs text-slate-500 mt-2">
-          Click the button to load campus-specific courses.
+    return (
+      <div className="mt-3 space-y-3">
+        <p className="text-xs text-slate-500">
+          Select a campus to see course offerings for this program.
         </p>
-      );
-    }
+        <div className="space-y-2">
+          {campuses.map(campus => {
+            const isExpanded =
+              expandedCampusCourseLists[programName]?.has(campus) ?? false;
+            const campusState = campusCourseLists[programName]?.[campus];
 
-    if (state.loading) {
+            return (
+              <div
+                key={campus}
+                className="border border-slate-200 rounded-lg overflow-hidden bg-white"
+              >
+                <button
+                  onClick={() =>
+                    toggleCampusCourseList(programName, campus, variants)
+                  }
+                  className="w-full flex items-center justify-between px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                >
+                  <span>{campus}</span>
+                  <span className="flex items-center gap-1 text-xs text-slate-500">
+                    {formatCourseCountLabel(campusState?.courses?.length)}
+                    <ChevronRight
+                      className={
+                        "w-3.5 h-3.5 transition-transform " +
+                        (isExpanded ? "rotate-90" : "")
+                      }
+                    />
+                  </span>
+                </button>
+                {isExpanded && (
+                  <div className="px-3 pb-3">
+                    {renderCampusCourses(programName, campus, variants)}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  const renderCampusCourses = (
+    programName: string,
+    campus: string,
+    variants?: string[]
+  ) => {
+    const state = campusCourseLists[programName]?.[campus];
+
+    if (!state || state.loading) {
       return (
         <p className="text-xs text-slate-500 mt-2">
           Loading course information...
@@ -475,7 +563,7 @@ const PathwayVisualization: React.FC<{ data: PathwayData }> = ({ data }) => {
           <p>{state.error}</p>
           <button
             onClick={() =>
-              fetchCoursesForProgram(programName, campuses, variants)
+              fetchCoursesForCampus(programName, campus, variants)
             }
             className="text-red-700 underline decoration-dotted hover:text-red-900 transition-colors"
           >
@@ -488,74 +576,62 @@ const PathwayVisualization: React.FC<{ data: PathwayData }> = ({ data }) => {
     if (!state.courses.length) {
       return (
         <p className="text-xs text-slate-500 mt-2">
-          No courses directly related to this program were found.
+          No courses directly related to this program were found on this campus.
         </p>
       );
     }
 
-    const coursesByCampus = state.courses.reduce<
-      Record<string, CollegeCourse[]>
-    >((acc, course) => {
-      const campusName = course.campus || "Unknown campus";
-      if (!acc[campusName]) acc[campusName] = [];
-      acc[campusName].push(course);
-      return acc;
-    }, {});
-
-    const campusOrder = Object.keys(coursesByCampus).sort((a, b) =>
-      a.localeCompare(b)
-    );
-
     const formatUnits = (units?: string) => {
       if (!units) return null;
       if (units.toLowerCase() === "v") return "Variable credits";
-      return `${units} credits`;
+      return units + " credits";
     };
 
     return (
-      <div className="mt-3 space-y-3">
-        {campusOrder.map(campus => (
-          <div key={campus}>
-            <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 mb-1">
-              {campus}
-            </div>
-            <div className="space-y-1.5">
-              {coursesByCampus[campus].map((course, idx) => {
-                const courseId = [course.course_prefix, course.course_number]
-                  .filter(Boolean)
-                  .join(" ");
-                const unitsLabel = formatUnits(course.num_units);
+      <div className="mt-2 space-y-2">
+        {state.courses.map((course, idx) => {
+          const courseId = [course.course_prefix, course.course_number]
+            .filter(Boolean)
+            .join(" ");
+          const unitsLabel = formatUnits(course.num_units);
+          const courseKey = (courseId || "course") + "-" + idx;
 
-                return (
-                  <div
-                    key={`${courseId}-${idx}`}
-                    className="bg-red-50 border border-red-100 rounded-md px-3 py-2"
-                  >
-                    <div className="text-xs font-semibold text-slate-900">
-                      {course.course_title || courseId || "Course"}
-                    </div>
-                    <div className="text-[11px] text-slate-600 mt-1 flex flex-wrap gap-2">
-                      {courseId && (
-                        <span className="font-mono text-slate-700">
-                          {courseId}
-                        </span>
-                      )}
-                      {unitsLabel && <span>{unitsLabel}</span>}
-                      {course.dept_name && (
-                        <span className="text-slate-500">
-                          {course.dept_name}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+          return (
+            <div
+              key={courseKey}
+              className="bg-red-50 border border-red-100 rounded-md px-3 py-2 space-y-1"
+            >
+              <div className="flex items-center justify-between">
+                <div className="text-xs font-semibold text-slate-900">
+                  {course.course_title || courseId || "Course"}
+                </div>
+                {courseId && (
+                  <span className="text-[11px] font-mono text-red-600">
+                    {courseId}
+                  </span>
+                )}
+              </div>
+              {course.course_desc && (
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  {course.course_desc}
+                </p>
+              )}
+              <div className="flex flex-wrap gap-2 text-[11px] text-slate-600">
+                {unitsLabel && <span>{unitsLabel}</span>}
+                {course.dept_name && (
+                  <span>Department: {course.dept_name}</span>
+                )}
+              </div>
+              {course.metadata && (
+                <p className="text-[11px] text-slate-500">{course.metadata}</p>
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     );
   };
+
 
   const formatProgramDetails = (
     programName: string,
@@ -925,7 +1001,7 @@ const PathwayVisualization: React.FC<{ data: PathwayData }> = ({ data }) => {
 
                 <div className="mt-3 pt-3 border-t border-slate-100">
                   <button
-                    onClick={() => toggleCourseList(prog.name, prog.campuses)}
+                    onClick={() => toggleCourseList(prog.name)}
                     className="flex items-center gap-2 text-xs font-medium text-red-700 hover:text-red-900 transition-colors"
                   >
                     <Database className="w-3.5 h-3.5" />
