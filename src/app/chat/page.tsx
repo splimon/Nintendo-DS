@@ -11,7 +11,10 @@ const ChatPage = () => {
   if (!selectedLanguage) {
     return (
       <div className="h-screen flex items-center justify-center bg-gradient-to-br from-green-800 to-green-900">
-        <LanguageSelection onLanguageSelect={setSelectedLanguage} />
+        <LanguageSelection onLanguageSelect={setSelectedLanguage} 
+        onBack={function (): void {
+                throw new Error('Function not implemented.')
+            } } />
       </div>
     )
   }

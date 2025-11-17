@@ -124,6 +124,20 @@ const WavingEmoji = ({
   );
 };
 
+// Helper function to get welcome message based on language
+const getWelcomeMessage = (languageCode: string = "en"): string => {
+  switch (languageCode) {
+    case "haw":
+      return "E komo mai!"; // Welcome in Hawaiian
+    case "hwp":
+      return "Eh, howzit!"; // Hawaiian Pidgin greeting
+    case "tl":
+      return "Maligayang pagdating!"; // Welcome in Tagalog
+    default:
+      return "Welcome!";
+  }
+};
+
 interface ChatMessagesProps {
   messages: Message[];
   isLoading: boolean;
@@ -136,6 +150,7 @@ interface ChatMessagesProps {
   dataPanelOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
   navSidebarOpen: boolean;
+  currentLanguage?: { code: string; name: string; nativeName: string };
 }
 
 interface ProgramDetails {
@@ -1174,6 +1189,7 @@ export default function ChatMessages({
   sidebarOpen,
   dataPanelOpen,
   navSidebarOpen,
+  currentLanguage,
 }: ChatMessagesProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -1181,6 +1197,9 @@ export default function ChatMessages({
 
   // Check if this is the initial state (no user messages yet)
   const isInitialState = messages.filter(m => m.role === "user").length === 0;
+
+  // Get language-specific welcome message
+  const welcomeText = getWelcomeMessage(currentLanguage?.code || "en");
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -1238,7 +1257,7 @@ export default function ChatMessages({
                   className="text-4xl font-bold text-slate-900 tracking-tight"
                   style={{ letterSpacing: "0.04em" }}
                 >
-                  <TypingText text="Welcome!" speed={60} delay={2000} />
+                  <TypingText text={welcomeText} speed={60} delay={2000} />
                 </h1>
               </div>
 
