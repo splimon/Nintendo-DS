@@ -12,7 +12,7 @@ const LanguagePage = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsVisible(true)
-    }, 50)
+    }, 100) // Slight delay for smoother transition
     return () => clearTimeout(timer)
   }, [])
 

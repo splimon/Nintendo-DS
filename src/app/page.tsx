@@ -148,10 +148,10 @@ export default function MainPage() {
             onClick={() => {
               setIsLeavingHome(true);
               setNextView("chat");
-              // Add a small delay before navigation for smooth transition
+              // Match the delay with the transition duration (300ms)
               setTimeout(() => {
                 window.location.href = "/language";
-              }, 200);
+              }, 300);
             }}
             className="text-white bg-emerald-600 hover:bg-emerald-400 px-8 py-4 rounded-full text-lg font-medium transition-all duration-200 hover:scale-105 flex items-center gap-3 min-w-[200px] justify-center shadow-[0_10px_30px_rgba(34,197,94,0.25)] group"
           >
