@@ -133,20 +133,35 @@ HOW TO REFER TO THE PERSON IN THE SUMMARY:
 - If status unclear: "the individual" (safe default)
 - NEVER assume "student" unless they are actually currently enrolled in school
 
-Return ONLY valid JSON in this exact format:
+Return ONLY valid JSON in this exact format. 
+
+CRITICAL INSTRUCTIONS FOR ENUM FIELDS:
+- For fields like "educationLevel", "currentStatus", "timeline", "location", etc.
+- You MUST choose EXACTLY ONE value from the options provided
+- Return ONLY the chosen value as a string (e.g., "college_junior")
+- DO NOT return multiple values separated by | or any other delimiter
+- DO NOT return the entire list of options
+- Choose the MOST ACCURATE option based on the conversation
+- Use "null" only if truly unknown
+
+EXAMPLE:
+✅ CORRECT: "educationLevel": "college_junior"
+❌ WRONG: "educationLevel": "college_freshman|college_sophomore|college_junior"
+❌ WRONG: "educationLevel": "college_freshman OR college_sophomore"
+
 {
   "summary": "A comprehensive 5-6 sentence narrative IN ENGLISH in third person using APPROPRIATE terminology (not always 'student'!) that captures their full story, including current situation, interests, goals, challenges, timeline, and context. Make it personal and specific. Write in plain text without any markdown formatting.",
   "extracted": {
-    "educationLevel": "elementary|middle_school|high_school_freshman|high_school_sophomore|high_school_junior|high_school_senior|college_freshman|college_sophomore|college_junior|college_senior|associate_degree|bachelor_degree|master_degree|doctoral_degree|trade_certification|working_professional|null",
+    "educationLevel": "Choose ONE: elementary, middle_school, high_school_freshman, high_school_sophomore, high_school_junior, high_school_senior, college_freshman, college_sophomore, college_junior, college_senior, associate_degree, bachelor_degree, master_degree, doctoral_degree, trade_certification, working_professional, or null",
     "currentGrade": null or grade number if applicable,
-    "currentStatus": "full_time_student|part_time_student|recent_graduate|employed_full_time|employed_part_time|unemployed|career_changer|returning_to_workforce|exploring_options|null",
+    "currentStatus": "Choose ONE: full_time_student, part_time_student, recent_graduate, employed_full_time, employed_part_time, unemployed, career_changer, returning_to_workforce, exploring_options, or null",
     
     "interests": ["Extract specific interests, hobbies, subjects they enjoy. Be detailed: 'marine biology', 'video game design', 'helping elderly people', etc."],
     "careerGoals": ["Specific careers mentioned or implied: 'marine biologist', 'nurse', 'start own restaurant', 'work in tech', etc. Include both specific jobs and general fields."],
     "motivations": ["What drives them: 'help people', 'financial stability', 'creative expression', 'make a difference', 'family influence', etc."],
     
-    "timeline": "immediate|within_6_months|within_1_year|within_2_years|within_5_years|long_term|flexible|null",
-    "location": "Oahu|Maui|Hawaii_Island|Kauai|Molokai|Lanai|multiple_islands|mainland_US|flexible|null",
+    "timeline": "Choose ONE: immediate, within_6_months, within_1_year, within_2_years, within_5_years, long_term, flexible, or null",
+    "location": "Choose ONE: Oahu, Maui, Hawaii_Island, Kauai, Molokai, Lanai, multiple_islands, mainland_US, flexible, or null",
     "workPreferences": {
       "environment": "office|outdoor|laboratory|hospital|school|home|mixed|null",
       "schedule": "full_time|part_time|flexible|shift_work|seasonal|null",
