@@ -942,7 +942,7 @@ export default function UnifiedSleekChat({
 
   return (
     <div
-      className="h-screen bg-slate-50"
+      className="h-screen bg-transparent"
       style={{
         fontFamily:
           '"Inter", "Segoe UI", "Roboto", "Helvetica Neue", sans-serif',

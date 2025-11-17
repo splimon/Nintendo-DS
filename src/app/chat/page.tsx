@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import UnifiedSleekChat from '../components/AIPathwaysChat/UnifiedSleekChat'
 import { Language } from '../components/LanguageSelection'
+import { Ripple } from '@/components/ui/shadcn-io/ripple'
 
 const ChatPage = () => {
   const router = useRouter()
@@ -38,8 +39,16 @@ const ChatPage = () => {
   }
 
   return (
-    <div className={`transition-all duration-500 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
-      <UnifiedSleekChat selectedLanguage={selectedLanguage} />
+    <div className={`relative min-h-screen transition-all duration-500 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
+      {/* Ripple Background */}
+      {/*<div className='absolute inset-0 flex justify-end items-center pr-64'>
+        <Ripple />
+      </div>/*}
+      
+      {/* Chat Interface */}
+      <div className="relative z-10">
+        <UnifiedSleekChat selectedLanguage={selectedLanguage} />
+      </div>
     </div>
   )
 }

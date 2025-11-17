@@ -1232,7 +1232,7 @@ export default function ChatMessages({
   if (isInitialState) {
     return (
       <div
-        className="flex-1 flex flex-col items-center justify-center transition-all duration-300 bg-white"
+        className="flex-1 flex flex-col items-center justify-center transition-all duration-300 bg-transparent"
         style={{
           fontFamily:
             '"SF Pro Display", "Inter", -apple-system, BlinkMacSystemFont, sans-serif',
@@ -1318,7 +1318,7 @@ export default function ChatMessages({
   // Normal chat layout after first user message
   return (
     <div
-      className="flex-1 overflow-y-auto pb-36 transition-all duration-300 bg-white"
+      className="flex-1 overflow-y-auto pb-36 transition-all duration-300 bg-transparent"
       style={{
         fontFamily:
           '"SF Pro Display", "Inter", -apple-system, BlinkMacSystemFont, sans-serif',

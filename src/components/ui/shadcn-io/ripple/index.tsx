@@ -2,7 +2,8 @@
 
 import React, { ComponentPropsWithoutRef, CSSProperties } from "react";
 
-import { cn } from "@repo/shadcn-ui/lib/utils";
+const cn = (...classes: Array<string | false | null | undefined>) =>
+  classes.filter(Boolean).join(" ");
 
 interface RippleProps extends ComponentPropsWithoutRef<"div"> {
   mainCircleSize?: number;
