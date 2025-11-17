@@ -1,26 +1,47 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import UnifiedSleekChat from '../components/AIPathwaysChat/UnifiedSleekChat'
-import LanguageSelection, { Language } from '../components/LanguageSelection'
+import { Language } from '../components/LanguageSelection'
 
 const ChatPage = () => {
+  const router = useRouter()
   const [selectedLanguage, setSelectedLanguage] = useState<Language | null>(null)
+  const [isVisible, setIsVisible] = useState(false)
 
-  // If no language selected, show language selection
+  // Load selected language from localStorage
+  useEffect(() => {
+    const savedLanguage = localStorage.getItem('selectedLanguage')
+    if (savedLanguage) {
+      try {
+        const language = JSON.parse(savedLanguage)
+        setSelectedLanguage(language)
+        // Fade in after language is loaded
+        setTimeout(() => {
+          setIsVisible(true)
+        }, 50)
+      } catch (error) {
+        console.error('Failed to load language:', error)
+        // Redirect to language selection if no valid language
+        router.push('/language')
+      }
+    } else {
+      // Redirect to language selection if no language saved
+      router.push('/language')
+    }
+  }, [router])
+
+  // Don't render anything until language is loaded
   if (!selectedLanguage) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-gradient-to-br from-green-800 to-green-900">
-        <LanguageSelection onLanguageSelect={setSelectedLanguage} 
-        onBack={function (): void {
-                throw new Error('Function not implemented.')
-            } } />
-      </div>
-    )
+    return null
   }
 
-  // Once language is selected, show chat interface
-  return <UnifiedSleekChat selectedLanguage={selectedLanguage} />
+  return (
+    <div className={`transition-all duration-500 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
+      <UnifiedSleekChat selectedLanguage={selectedLanguage} />
+    </div>
+  )
 }
 
 export default ChatPage

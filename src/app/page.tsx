@@ -144,12 +144,20 @@ export default function MainPage() {
 
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <Link href="/chat">
-            <button className="text-white bg-emerald-600 hover:bg-emerald-400 px-8 py-4 rounded-full text-lg font-medium transition-all duration-200 hover:scale-105 flex items-center gap-3 min-w-[200px] justify-center shadow-[0_10px_30px_rgba(34,197,94,0.25)] group">
-              Start talking
-              <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
-            </button>
-          </Link>
+          <button 
+            onClick={() => {
+              setIsLeavingHome(true);
+              setNextView("chat");
+              // Add a small delay before navigation for smooth transition
+              setTimeout(() => {
+                window.location.href = "/language";
+              }, 200);
+            }}
+            className="text-white bg-emerald-600 hover:bg-emerald-400 px-8 py-4 rounded-full text-lg font-medium transition-all duration-200 hover:scale-105 flex items-center gap-3 min-w-[200px] justify-center shadow-[0_10px_30px_rgba(34,197,94,0.25)] group"
+          >
+            Start talking
+            <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+          </button>
         </div>
       </div>
 
