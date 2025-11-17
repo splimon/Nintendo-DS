@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import UnifiedSleekChat from "./components/AIPathwaysChat/UnifiedSleekChat";
 // import LanguageSelection, { Language } from "./components/LanguageSelection";
@@ -17,6 +18,7 @@ type UserProfile = {
 };
 
 export default function MainPage() {
+  const router = useRouter();
   const [currentView, setCurrentView] = useState<"home" | "onboarding" | "language" | "chat">(
     "home"
   );
@@ -147,11 +149,9 @@ export default function MainPage() {
           <button 
             onClick={() => {
               setIsLeavingHome(true);
-              setNextView("chat");
-              // Match the delay with the transition duration (300ms)
               setTimeout(() => {
-                window.location.href = "/language";
-              }, 300);
+                router.push("/language");
+              }, 500);
             }}
             className="text-white bg-emerald-600 hover:bg-emerald-400 px-8 py-4 rounded-full text-lg font-medium transition-all duration-200 hover:scale-105 flex items-center gap-3 min-w-[200px] justify-center shadow-[0_10px_30px_rgba(34,197,94,0.25)] group"
           >
