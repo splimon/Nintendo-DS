@@ -8,6 +8,7 @@ import UnifiedSleekChat from "./components/AIPathwaysChat/UnifiedSleekChat";
 import { Language } from "./components/LanguageSelection";
 import OnboardingWizard from "./components/AIPathwaysChat/Onboarding/OnboardingWizard";
 import Particles from "./components/Particles";
+import Link from "next/link";
 
 // Captures info gathered during onboarding (can expand later).
 type UserProfile = {
@@ -49,12 +50,6 @@ export default function MainPage() {
 
     return () => clearTimeout(timeout);
   }, [isLeavingHome, nextView]);
-
-  const handleStartChat = () => {
-    if (currentView !== "home" || isLeavingHome) return;
-    setNextView("chat");
-    setIsLeavingHome(true);
-  };
 
   // Placeholder completion handler so chat can still open.
   const handleOnboardingComplete = (profile: UserProfile) => {
@@ -123,9 +118,9 @@ export default function MainPage() {
       {/* Simple corner logo */}
       <div className="absolute top-8 left-8 z-20">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-gray-200">
+          <Link className="text-sm font-medium text-gray-200" href="/">
             UH Pathways
-          </span>
+          </Link>
         </div>
       </div>
 
@@ -149,11 +144,18 @@ export default function MainPage() {
 
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <button
-            onClick={handleStartChat}
-            className="text-white bg-emerald-600 hover:bg-emerald-400 px-8 py-4 rounded-full text-lg font-medium transition-all duration-200 hover:scale-105 flex items-center gap-3 min-w-[200px] justify-center shadow-[0_10px_30px_rgba(34,197,94,0.25)]"
+          <button 
+            onClick={() => {
+              setIsLeavingHome(true);
+              setNextView("chat");
+              // Add a small delay before navigation for smooth transition
+              setTimeout(() => {
+                window.location.href = "/language";
+              }, 200);
+            }}
+            className="text-white bg-emerald-600 hover:bg-emerald-400 px-8 py-4 rounded-full text-lg font-medium transition-all duration-200 hover:scale-105 flex items-center gap-3 min-w-[200px] justify-center shadow-[0_10px_30px_rgba(34,197,94,0.25)] group"
           >
-            <span>Start talking</span>
+            Start talking
             <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
           </button>
         </div>

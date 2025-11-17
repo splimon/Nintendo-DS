@@ -1,5 +1,5 @@
 // components/LanguageSelection.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Globe, Check, ArrowRight } from "lucide-react";
 
 export interface Language {
@@ -52,6 +52,15 @@ export default function LanguageSelection({
 }: LanguageSelectionProps) {
   const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+
+  // Trigger fade-in animation on mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsVisible(true);
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleLanguageSelect = (language: Language) => {
     setSelectedLanguage(language.code);
@@ -74,7 +83,9 @@ export default function LanguageSelection({
       {/* Back button */}
       <button
         onClick={onBack}
-        className="absolute top-8 left-8 text-gray-600 hover:text-gray-900 transition-colors flex items-center gap-2 text-sm"
+        className={`absolute top-8 left-8 text-gray-600 hover:text-gray-900 transition-all duration-700 flex items-center gap-2 text-sm ${
+          isVisible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4"
+        }`}
       >
         <ArrowRight className="w-4 h-4 rotate-180" />
         <span>Back</span>
@@ -82,12 +93,18 @@ export default function LanguageSelection({
 
       {/* Main Content */}
       <div
-        className={`max-w-4xl px-8 w-full transition-all duration-500 ${
-          isAnimating ? "opacity-0 scale-95" : "opacity-100 scale-100"
+        className={`max-w-4xl px-8 w-full transition-all duration-700 ${
+          isAnimating 
+            ? "opacity-0 scale-95" 
+            : isVisible 
+            ? "opacity-100 scale-100" 
+            : "opacity-0 scale-95"
         }`}
       >
         {/* Header */}
-        <div className="text-center mb-12">
+        <div className={`text-center mb-12 transition-all duration-700 delay-100 ${
+          isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+        }`}>
           <div className="w-16 h-16 bg-black rounded-2xl flex items-center justify-center mx-auto mb-6">
             <Globe className="w-8 h-8 text-white" />
           </div>
@@ -98,19 +115,27 @@ export default function LanguageSelection({
 
         {/* Language Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl mx-auto">
-          {languages.map(language => (
+          {languages.map((language, index) => (
             <button
               key={language.code}
               onClick={() => handleLanguageSelect(language)}
               className={`
-                group relative p-6 rounded-2xl border-2 transition-all duration-200
+                group relative p-6 rounded-2xl border-2 transition-all duration-700
                 hover:scale-[1.02] hover:shadow-lg
                 ${
                   selectedLanguage === language.code
                     ? "border-black bg-gray-50"
                     : "border-gray-200 hover:border-gray-400 bg-white"
                 }
+                ${
+                  isVisible 
+                    ? "opacity-100 translate-y-0" 
+                    : "opacity-0 translate-y-8"
+                }
               `}
+              style={{
+                transitionDelay: `${200 + index * 100}ms`
+              }}
             >
               {/* Selection indicator */}
               {selectedLanguage === language.code && (

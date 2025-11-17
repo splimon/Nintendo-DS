@@ -94,20 +94,20 @@ const extractDisplayedSocCodes = (
 
 const getInitialGreeting = (language: Language | null): string => {
   if (!language)
-    return "## Aloha 🌺\n\nI can help you explore educational pathways in Hawaii. What are you interested in?";
+    return "I can help you explore educational pathways in Hawaii. What are you interested in?";
 
   switch (language.code) {
     case "haw":
-      return "## Aloha 🌺\n\nE kōkua ana au iā ʻoe e ʻimi i nā ala hoʻonaʻauao ma Hawaiʻi. He aha kou makemake?";
+      return "E kōkua ana au iā ʻoe e ʻimi i nā ala hoʻonaʻauao ma Hawaiʻi. He aha kou makemake?";
 
     case "hwp":
-      return "## Eh howzit!\n\nI going help you check out educational pathways in Hawaii. What you like know?";
+      return "I going help you check out educational pathways in Hawaii. What you like know?";
 
     case "tl":
-      return "## Kumusta!\n\nTutulungan kitang tuklasin ang mga landas ng edukasyon sa Hawaii. Ano ang gusto mong malaman?";
+      return "Tutulungan kitang tuklasin ang mga landas ng edukasyon sa Hawaii. Ano ang gusto mong malaman?";
 
     default:
-      return "## Aloha 🌺\n\nI can help you explore educational pathways in Hawaii. What are you interested in?";
+      return "I can help you explore educational pathways in Hawaii. What are you interested in?";
   }
 };
 
@@ -213,41 +213,13 @@ export default function UnifiedSleekChat({
   useEffect(() => {
     const greeting = getInitialGreeting(currentLanguage);
     
-    // Try to load chat sessions from localStorage
-    const savedSessions = localStorage.getItem('chatSessions');
-    const savedCurrentId = localStorage.getItem('currentChatId');
+    // Clear localStorage to start fresh with the selected language
+    // This ensures we don't load old sessions with different language greetings
+    localStorage.removeItem('chatSessions');
+    localStorage.removeItem('currentChatId');
     
-    if (savedSessions && savedCurrentId) {
-      try {
-        const sessions: ChatSession[] = JSON.parse(savedSessions).map((s: any) => ({
-          ...s,
-          createdAt: new Date(s.createdAt),
-          updatedAt: new Date(s.updatedAt),
-        }));
-        
-        isInitializing.current = true;
-        setChatSessions(sessions);
-        setCurrentChatId(savedCurrentId);
-        
-        // Load the current session
-        const currentSession = sessions.find(s => s.id === savedCurrentId);
-        if (currentSession) {
-          setMessages(currentSession.messages);
-          setUserProfile(currentSession.userProfile);
-          setCurrentData(currentSession.currentData);
-          setDisplayedSocCodes(currentSession.displayedSocCodes);
-          setDataPanelOpen(currentSession.displayedSocCodes.length > 0);
-        }
-        setTimeout(() => { isInitializing.current = false; }, 100);
-      } catch (error) {
-        console.error('Failed to load chat sessions:', error);
-        // Initialize new session if loading fails
-        initializeNewSession(greeting);
-      }
-    } else {
-      // Initialize first chat session
-      initializeNewSession(greeting);
-    }
+    // Always initialize a new session with the correct language
+    initializeNewSession(greeting);
     
     setSuggestedQuestions(getInitialSuggestions(currentLanguage));
   }, []);
@@ -970,7 +942,7 @@ export default function UnifiedSleekChat({
 
   return (
     <div
-      className="h-screen bg-slate-50"
+      className="h-screen bg-transparent"
       style={{
         fontFamily:
           '"Inter", "Segoe UI", "Roboto", "Helvetica Neue", sans-serif',
@@ -1029,6 +1001,7 @@ export default function UnifiedSleekChat({
               dataPanelOpen={dataPanelOpen}
               setSidebarOpen={setSidebarOpen}
               navSidebarOpen={navSidebarOpen}
+              currentLanguage={currentLanguage}
             />
           </div>
         </div>

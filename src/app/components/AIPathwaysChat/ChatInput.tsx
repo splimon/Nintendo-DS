@@ -222,12 +222,6 @@ export default function ChatInput({
             <div className="mt-3 mb-1 flex items-center justify-between text-xs">
               <div className="flex items-center gap-3 text-gray-600">
                 <div className="flex items-center gap-1.5">
-                  <img
-                    src="/images/uhcc-logo-3.png"
-                    alt="UHCC Logo"
-                    className="w-6 h-6 object-contain"
-                  />
-                  <span>Sponsored by UHCC</span>
                 </div>
               </div>
 

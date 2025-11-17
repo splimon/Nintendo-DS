@@ -8,6 +8,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { Language } from "../LanguageSelection";
+import Link from "next/link";
 
 interface ChatSession {
   id: string;
@@ -57,9 +58,12 @@ export default function NavSidebar({
       {/* Header with Toggle */}
       <div className="flex-shrink-0 bg-white border-b border-slate-200 p-3 flex items-center justify-between">
         {isOpen && (
-          <span className="font-bold text-slate-900 text-sm whitespace-nowrap">
+          <Link
+            href="/"
+            className="font-bold text-slate-900 text-sm whitespace-nowrap hover:text-slate-700 transition-colors"
+          >
             UH Pathways
-          </span>
+          </Link>
         )}
         <button
           onClick={onToggle}

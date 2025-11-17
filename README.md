@@ -1,4 +1,4 @@
-# AI Pathways POC - University of Hawaii Career Pathways System
+# UH Pathways - University of Hawaii Career Pathways System
 
 An intelligent educational pathway advisor system that helps students explore career paths through Hawaii's Community College (UHCC) programs. The system uses AI agents to provide personalized recommendations, market intelligence, and career guidance based on student profiles and conversational context.
 
@@ -849,7 +849,7 @@ The project is optimized for Vercel deployment:
 
 For questions or issues:
 - Open an issue on GitHub
-- Contact: ldroxas@hawaiii.edu
+- Contact: splimon@hawaii.edu and/or dahyunkw@hawaii.edu
 
 ---
 

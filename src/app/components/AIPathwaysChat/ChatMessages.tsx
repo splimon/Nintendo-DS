@@ -13,6 +13,131 @@ import {
 import { Message, UserProfile } from "./types";
 import { PROGRAM_PREFIX_MAP } from "@/app/lib/helpers/program-course-prefix";
 
+// Typing animation component
+const TypingText = ({ 
+  text, 
+  speed = 70, 
+  delay = 0,
+  className = "",
+  onComplete
+}: { 
+  text: string; 
+  speed?: number; 
+  delay?: number;
+  className?: string;
+  onComplete?: () => void;
+}) => {
+  const [displayedText, setDisplayedText] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const hasCompletedRef = useRef(false);
+
+  useEffect(() => {
+    // Only run animation once
+    if (hasCompletedRef.current) return;
+
+    // Reset when text changes
+    setDisplayedText("");
+    setIsTyping(true);
+
+    const startTimeout = setTimeout(() => {
+      let currentIndex = 0;
+      const interval = setInterval(() => {
+        if (currentIndex <= text.length) {
+          setDisplayedText(text.slice(0, currentIndex));
+          currentIndex++;
+        } else {
+          clearInterval(interval);
+          setIsTyping(false);
+          hasCompletedRef.current = true;
+          onComplete?.(); // Notify when typing is complete
+        }
+      }, speed);
+
+      return () => clearInterval(interval);
+    }, delay);
+
+    return () => clearTimeout(startTimeout);
+  }, [text, speed, delay, onComplete]);
+
+  return (
+    <span className={className}>
+      {displayedText}
+      {isTyping && <span className="animate-pulse">|</span>}
+    </span>
+  );
+};
+
+// Waving emoji animation component
+const WavingEmoji = ({ 
+  delay = 0,
+  duration = 2000,
+  onComplete
+}: { 
+  delay?: number;
+  duration?: number;
+  onComplete?: () => void;
+}) => {
+  const [isVisible, setIsVisible] = useState(true);
+  const [isFadingOut, setIsFadingOut] = useState(false);
+
+  useEffect(() => {
+    // Start fade out 500ms before hiding
+    const fadeTimeout = setTimeout(() => {
+      setIsFadingOut(true);
+    }, delay + duration - 500);
+
+    const hideTimeout = setTimeout(() => {
+      setIsVisible(false);
+      onComplete?.();
+    }, delay + duration);
+
+    return () => {
+      clearTimeout(fadeTimeout);
+      clearTimeout(hideTimeout);
+    };
+  }, [delay, duration, onComplete]);
+
+  if (!isVisible) return null;
+
+  return (
+    <div 
+      className={`inline-block text-6xl transition-all duration-500 ${
+        isFadingOut ? 'opacity-0 scale-95' : 'opacity-100 scale-100 animate-in fade-in zoom-in'
+      }`}
+      style={{ 
+        animationName: isFadingOut ? 'none' : 'wave',
+        animationDuration: isFadingOut ? undefined : '0.6s',
+        animationTimingFunction: isFadingOut ? undefined : 'ease-in-out',
+        animationIterationCount: isFadingOut ? undefined : 'infinite',
+        animationDelay: isFadingOut ? undefined : `${delay}ms`
+      }}
+    >
+      👋
+      <style jsx>{`
+        @keyframes wave {
+          0%, 100% { transform: rotate(0deg); }
+          25% { transform: rotate(20deg); }
+          75% { transform: rotate(-15deg); }
+        }
+      `}</style>
+    </div>
+  );
+};
+
+// Helper function to get welcome message based on language
+const getWelcomeMessage = (languageCode: string = "en"): string => {
+  switch (languageCode) {
+    case "haw":
+      return "E komo mai!"; // Welcome in Hawaiian
+    case "hwp":
+      return "Eh, howzit!"; // Hawaiian Pidgin greeting
+    case "tl":
+      return "Maligayang pagdating!"; // Welcome in Tagalog
+    default:
+      return "Welcome!";
+  }
+};
+
 interface ChatMessagesProps {
   messages: Message[];
   isLoading: boolean;
@@ -25,6 +150,7 @@ interface ChatMessagesProps {
   dataPanelOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
   navSidebarOpen: boolean;
+  currentLanguage?: { code: string; name: string; nativeName: string };
 }
 
 interface ProgramDetails {
@@ -1063,6 +1189,7 @@ export default function ChatMessages({
   sidebarOpen,
   dataPanelOpen,
   navSidebarOpen,
+  currentLanguage,
 }: ChatMessagesProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -1070,6 +1197,9 @@ export default function ChatMessages({
 
   // Check if this is the initial state (no user messages yet)
   const isInitialState = messages.filter(m => m.role === "user").length === 0;
+
+  // Get language-specific welcome message
+  const welcomeText = getWelcomeMessage(currentLanguage?.code || "en");
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -1102,7 +1232,7 @@ export default function ChatMessages({
   if (isInitialState) {
     return (
       <div
-        className="flex-1 flex flex-col items-center justify-center transition-all duration-300 bg-white"
+        className="flex-1 flex flex-col items-center justify-center transition-all duration-300 bg-transparent"
         style={{
           fontFamily:
             '"SF Pro Display", "Inter", -apple-system, BlinkMacSystemFont, sans-serif',
@@ -1115,14 +1245,10 @@ export default function ChatMessages({
           {/* Welcome Message */}
           {messages.length > 0 && messages[0].role === "assistant" && (
             <div className="text-center mb-8 space-y-8 animate-in fade-in duration-700">
-              {/* Logo */}
-              <div className="inline-block">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/images/uhcc-logo-3.png"
-                  alt="UHCC Logo"
-                  className="w-20 h-20 object-contain mx-auto drop-shadow-sm"
-                />
+
+              {/* Waving Emoji */}
+              <div className="py-4">
+                <WavingEmoji delay={0} duration={1800} />
               </div>
 
               {/* Title */}
@@ -1131,29 +1257,35 @@ export default function ChatMessages({
                   className="text-4xl font-bold text-slate-900 tracking-tight"
                   style={{ letterSpacing: "0.04em" }}
                 >
-                  Kamaʻāina Pathways
+                  <TypingText text={welcomeText} speed={60} delay={2000} />
                 </h1>
               </div>
 
               {/* Greeting Text */}
               <div className="text-base text-slate-600 leading-relaxed max-w-2xl mx-auto">
-                <MarkdownRenderer
-                  content={messages[0].content}
+                <TypingText 
+                  text={messages[0].content} 
+                  speed={30} 
+                  delay={2800}
                   className="text-slate-600"
+                  onComplete={() => setShowSuggestions(true)}
                 />
               </div>
             </div>
           )}
 
           {/* Suggested Questions */}
-          {suggestedQuestions.length > 0 && !isLoading && (
-            <div className="space-y-3 animate-in slide-in-from-bottom-4 duration-500">
+          {suggestedQuestions.length > 0 && !isLoading && showSuggestions && (
+            <div className="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-250">
               <div className="grid grid-cols-2 gap-3">
                 {suggestedQuestions.map((question, idx) => (
                   <button
                     key={idx}
                     onClick={() => handleSuggestedQuestionClick(question)}
                     className="group bg-white border-2 border-slate-200 hover:border-black hover:bg-slate-50 text-slate-700 hover:text-black px-5 py-4 rounded-xl transition-all duration-200 text-left"
+                    style={{
+                      animation: `fadeInUp 0.5s ease-out ${idx * 0.1}s both`
+                    }}
                   >
                     <div className="flex items-center justify-between gap-3">
                       <span className="text-sm font-medium line-clamp-2">
@@ -1164,6 +1296,18 @@ export default function ChatMessages({
                   </button>
                 ))}
               </div>
+              <style jsx>{`
+                @keyframes fadeInUp {
+                  from {
+                    opacity: 0;
+                    transform: translateY(20px);
+                  }
+                  to {
+                    opacity: 1;
+                    transform: translateY(0);
+                  }
+                }
+              `}</style>
             </div>
           )}
         </div>
@@ -1174,7 +1318,7 @@ export default function ChatMessages({
   // Normal chat layout after first user message
   return (
     <div
-      className="flex-1 overflow-y-auto pb-36 transition-all duration-300 bg-white"
+      className="flex-1 overflow-y-auto pb-36 transition-all duration-300 bg-transparent"
       style={{
         fontFamily:
           '"SF Pro Display", "Inter", -apple-system, BlinkMacSystemFont, sans-serif',
