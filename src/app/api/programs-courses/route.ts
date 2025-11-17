@@ -64,9 +64,10 @@ export async function GET(req: Request) {
     ];
 
     // filter by title or department name
-    const results = allCourses.filter(c =>
-      // c.course_title?.toLowerCase().includes(query) ||
-      c.dept_name?.toLowerCase().includes(query)
+    const results = allCourses.filter(
+      c =>
+        c.course_title?.toLowerCase().includes(query) ||
+        c.dept_name?.toLowerCase().includes(query)
     );
 
     // return top 20 results

@@ -1012,7 +1012,6 @@ const PathwayVisualization: React.FC<{ data: PathwayData }> = ({ data }) => {
                     onClick={() => toggleCourseList(prog.name)}
                     className="flex items-center gap-2 text-xs font-medium text-red-700 hover:text-red-900 transition-colors"
                   >
-                    <Database className="w-3.5 h-3.5" />
                     {expandedCourseLists.has(prog.name) ? (
                       <ChevronDown className="w-3.5 h-3.5" />
                     ) : (
