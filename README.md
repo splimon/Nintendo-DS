@@ -1,6 +1,6 @@
 # UH Pathways - University of Hawaii Career Pathways System
 
-An intelligent educational pathway advisor system that helps students explore career paths through Hawaii's Community College (UHCC) programs. The system uses AI agents to provide personalized recommendations, market intelligence, and career guidance based on student profiles and conversational context.
+An intelligent educational pathway advisor system that helps students explore career paths through Hawaii's college programs. The system uses AI agents to provide personalized recommendations, market intelligence, and career guidance based on student profiles and conversational context.
 
 ---
 
