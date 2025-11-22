@@ -23,11 +23,11 @@ export const PROGRAM_SEARCH_MAP: Record<string, ProgramSearchTerms> = {
     departmentNames: ["Information and Computer Sciences", "Computer Science"]
   },
   "information and computer sciences": {
-    coursePrefixes: ["ICS", "IT"],
-    departmentNames: ["Information and Computer Sciences", "Information Technology"]
+    coursePrefixes: ["ICS"],
+    departmentNames: ["Information and Computer Sciences"]
   },
   "information technology": {
-    coursePrefixes: ["IT", "ICS"],
+    coursePrefixes: ["ITS", "IT"],
     departmentNames: ["Information Technology", "COMPUTING, SECURITY, AND NETWORKING TECHNOLOGY"]
   },
   "comp electronicsandnetwork tech": {

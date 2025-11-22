@@ -137,12 +137,44 @@ export async function GET(req: Request) {
 
     console.log(`[Programs-Courses API] Found ${results.length} matching courses`);
 
+    // Sort courses with custom priority: ICS first, then CIS, then others alphabetically
+    const sortedResults = results.sort((a, b) => {
+      const prefixA = (a.course_prefix || "").toUpperCase();
+      const prefixB = (b.course_prefix || "").toUpperCase();
+      
+      // Define priority order for specific prefixes
+      const getPrefixPriority = (prefix: string): number => {
+        if (prefix === "ICS") return 0;
+        if (prefix === "CIS") return 1;
+        return 2; // All other prefixes
+      };
+      
+      const priorityA = getPrefixPriority(prefixA);
+      const priorityB = getPrefixPriority(prefixB);
+      
+      // Sort by priority first
+      if (priorityA !== priorityB) {
+        return priorityA - priorityB;
+      }
+      
+      // If same priority level, sort alphabetically by prefix
+      if (prefixA !== prefixB) {
+        return prefixA.localeCompare(prefixB);
+      }
+      
+      // If same prefix, sort by course number (numerically)
+      const numA = parseInt(a.course_number || "0", 10);
+      const numB = parseInt(b.course_number || "0", 10);
+      
+      return numA - numB;
+    });
+
     // Return courses up to the specified limit
     return NextResponse.json({
       success: true,
-      total: results.length,
-      returned: Math.min(results.length, limit),
-      results: results.slice(0, limit),
+      total: sortedResults.length,
+      returned: Math.min(sortedResults.length, limit),
+      results: sortedResults.slice(0, limit),
     });
   } catch (err: unknown) {
     console.error("Error in /api/programs-courses:", err);
