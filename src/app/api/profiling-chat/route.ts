@@ -1026,16 +1026,16 @@ export async function POST(request: NextRequest) {
     console.log("Profiling chat API error:", error);
 
     const interestOptions = [
-      "Technology & Computer Science",
-      "Healthcare & Nursing",
-      "Business & Entrepreneurship",
-      "Engineering & Construction",
-      "Arts & Creative Media",
-      "Education & Teaching",
-      "Hospitality & Tourism",
-      "Science & Research",
-      "Law & Public Service",
-      "Agriculture & Environment",
+      "💻 Technology & Computer Science",
+      "🏥 Healthcare & Nursing",
+      "💼 Business & Entrepreneurship",
+      "🏗️ Engineering & Construction",
+      "🎨 Arts & Creative Media",
+      "📚 Education & Teaching",
+      "🏨 Hospitality & Tourism",
+      "🔬 Science & Research",
+      "⚖️ Law & Public Service",
+      "🌱 Agriculture & Environment",
     ];
 
     console.log("[Profiling Chat] Returning interest options count:", interestOptions.length);

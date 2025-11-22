@@ -114,74 +114,74 @@ const getInitialGreeting = (language: Language | null): string => {
 const getInitialSuggestions = (language: Language | null): string[] => {
   if (!language || language.code === "en") {
     return [
-      "Technology & Computer Science",
-      "Healthcare & Nursing",
-      "Business & Entrepreneurship",
-      "Engineering & Construction",
-      "Arts & Creative Media",
-      "Education & Teaching",
-      "Hospitality & Tourism",
-      "Science & Research",
-      "Law & Public Service",
-      "Agriculture & Environment",
+      "💻 Technology & Computer Science",
+      "🏥 Healthcare & Nursing",
+      "💼 Business & Entrepreneurship",
+      "🏗️ Engineering & Construction",
+      "🎨 Arts & Creative Media",
+      "📚 Education & Teaching",
+      "🏨 Hospitality & Tourism",
+      "🔬 Science & Research",
+      "⚖️ Law & Public Service",
+      "🌱 Agriculture & Environment",
     ];
   }
 
   switch (language.code) {
     case "haw":
       return [
-        "Kamepiula a me ka ʻenehana",
-        "Mālama olakino a me ka mālama",
-        "ʻOihana pilikino a me ka hoʻokele",
-        "Enekinia a me ka hale kūkulu",
-        "Nā hana noʻeau a me nā media hana",
-        "Hoʻonaʻauao a me ka aʻo ʻana",
-        "Hoʻokipa a me ka huakaʻi",
-        "ʻEpekema a me ka noiʻi",
-        "Kānāwai a me ka lawelawe lehulehu",
-        "Mahiʻai a me ka hoʻomaluʻana",
+        "💻 Kamepiula a me ka ʻenehana",
+        "🏥 Mālama olakino a me ka mālama",
+        "💼 ʻOihana pilikino a me ka hoʻokele",
+        "🏗️ Enekinia a me ka hale kūkulu",
+        "🎨 Nā hana noʻeau a me nā media hana",
+        "📚 Hoʻonaʻauao a me ka aʻo ʻana",
+        "🏨 Hoʻokipa a me ka huakaʻi",
+        "🔬 ʻEpekema a me ka noiʻi",
+        "⚖️ Kānāwai a me ka lawelawe lehulehu",
+        "🌱 Mahiʻai a me ka hoʻomaluʻana",
       ];
 
     case "hwp":
       return [
-        "Technology & Computer kine",
-        "Healthcare & Nursing",
-        "Business stuffs",
-        "Engineering & Construction",
-        "Arts & Creative kine",
-        "Teaching & Education",
-        "Hotel work & Tourism",
-        "Science & Research",
-        "Law & Government work",
-        "Farming & Environment",
+        "💻 Technology & Computer kine",
+        "🏥 Healthcare & Nursing",
+        "💼 Business stuffs",
+        "🏗️ Engineering & Construction",
+        "🎨 Arts & Creative kine",
+        "📚 Teaching & Education",
+        "🏨 Hotel work & Tourism",
+        "🔬 Science & Research",
+        "⚖️ Law & Government work",
+        "🌱 Farming & Environment",
       ];
 
     case "tl":
       return [
-        "Teknolohiya at Computer Science",
-        "Pag-aalaga ng Kalusugan at Nursing",
-        "Negosyo at Entrepreneurship",
-        "Engineering at Construction",
-        "Sining at Creative Media",
-        "Edukasyon at Pagtuturo",
-        "Hospitality at Turismo",
-        "Agham at Pananaliksik",
-        "Batas at Serbisyo Publiko",
-        "Agrikultura at Kapaligiran",
+        "💻 Teknolohiya at Computer Science",
+        "🏥 Pag-aalaga ng Kalusugan at Nursing",
+        "💼 Negosyo at Entrepreneurship",
+        "🏗️ Engineering at Construction",
+        "🎨 Sining at Creative Media",
+        "📚 Edukasyon at Pagtuturo",
+        "🏨 Hospitality at Turismo",
+        "🔬 Agham at Pananaliksik",
+        "⚖️ Batas at Serbisyo Publiko",
+        "🌱 Agrikultura at Kapaligiran",
       ];
 
     default:
       return [
-        "Technology & Computer Science",
-        "Healthcare & Nursing",
-        "Business & Entrepreneurship",
-        "Engineering & Construction",
-        "Arts & Creative Media",
-        "Education & Teaching",
-        "Hospitality & Tourism",
-        "Science & Research",
-        "Law & Public Service",
-        "Agriculture & Environment",
+        "💻 Technology & Computer Science",
+        "🏥 Healthcare & Nursing",
+        "💼 Business & Entrepreneurship",
+        "🏗️ Engineering & Construction",
+        "🎨 Arts & Creative Media",
+        "📚 Education & Teaching",
+        "🏨 Hospitality & Tourism",
+        "🔬 Science & Research",
+        "⚖️ Law & Public Service",
+        "🌱 Agriculture & Environment",
       ];
   }
 };

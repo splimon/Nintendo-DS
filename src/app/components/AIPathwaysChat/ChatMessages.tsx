@@ -764,9 +764,6 @@ const PathwayVisualization: React.FC<{ data: PathwayData }> = ({ data }) => {
                   <span>Department: {course.dept_name}</span>
                 )}
               </div>
-              {course.metadata && (
-                <p className="text-[11px] text-slate-500">{course.metadata}</p>
-              )}
             </div>
           );
         })}

@@ -118,7 +118,7 @@ OUTPUT: Return ONLY valid JSON:
         { role: "user", content: `Classify this query: "${message}"` }
       ],
       model: "llama-3.3-70b-versatile",
-      temperature: 0.1,
+      temperature: 0, // Set to 0 for deterministic classification
     });
 
     const content = response.choices[0].message.content || '{}';

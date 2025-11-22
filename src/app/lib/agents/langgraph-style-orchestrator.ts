@@ -296,7 +296,7 @@ Return JSON with tool array:`;
         { role: "user", content: userPrompt },
       ],
       model: "llama-3.3-70b-versatile",
-      temperature: 0.1,
+      temperature: 0, // Set to 0 for deterministic tool selection
       response_format: { type: "json_object" }, // JSON-FORCED - No regex parsing needed!
     });
     

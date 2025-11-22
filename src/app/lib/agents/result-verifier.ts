@@ -280,7 +280,7 @@ IMPORTANT:
           { role: "user", content: userPrompt },
         ],
         model: "llama-3.3-70b-versatile",
-        temperature: 0.1,
+        temperature: 0, // Set to 0 for completely deterministic results
       });
 
       const content = response.choices[0].message.content || "[]";
