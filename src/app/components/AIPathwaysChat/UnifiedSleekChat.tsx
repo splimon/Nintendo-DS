@@ -807,23 +807,24 @@ export default function UnifiedSleekChat({
       if (data.readyForProfile && !userProfile?.isComplete) {
         console.log("Profile building triggered by profiling-chat API");
         
-        // Check if we have structured answers from the 4-question flow
+        // Check if we have structured answers from the 5-question flow
         if (data.structuredAnswers) {
           console.log("Structured answers received:", data.structuredAnswers);
           
-          const { interests, skills, experiences, careerTrack } = data.structuredAnswers;
+          const { interests, skills, educationLevel, experiences, careerTrack } = data.structuredAnswers;
           
           // Create transcript from structured answers
           const transcript = `
 Student: My interests include ${interests}
 Student: I have skills in ${skills}
+Student: My current education level is ${educationLevel}
 Student: My background and experiences: ${experiences}
 Student: I am interested in pursuing a career as ${careerTrack}
           `.trim();
 
           const conversationMetrics = {
             totalMessages: newMessages.length,
-            userMessages: 4,
+            userMessages: 5,
             averageLength: 100,
           };
 
@@ -831,6 +832,17 @@ Student: I am interested in pursuing a career as ${careerTrack}
           setIsAnalyzing(true);
           
           try {
+            // If autoTriggerPathway is true, add a brief transition message
+            if (data.autoTriggerPathway) {
+              console.log("[AutoTrigger] Adding transition message");
+              const transitionMessage: Message = {
+                role: "assistant",
+                content: data.message, // "Let me find the best programs..."
+              };
+              setMessages(prev => [...prev, transitionMessage]);
+            }
+            
+            console.log("[AutoTrigger] Calling generate-profile API");
             const profileResponse = await fetch("/api/generate-profile", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -839,12 +851,14 @@ Student: I am interested in pursuing a career as ${careerTrack}
                 conversationMetrics,
                 language: currentLanguage.code,
                 structuredAnswers: data.structuredAnswers,
-                userMessageCount: 4,
+                userMessageCount: 5,
               }),
             });
 
             if (profileResponse.ok) {
               const profileData = await profileResponse.json();
+              console.log("[AutoTrigger] Profile generated successfully", profileData);
+              
               if (profileData.profile && profileData.extracted) {
                 const newProfile: UserProfile = {
                   profileSummary: profileData.profile,
@@ -854,6 +868,7 @@ Student: I am interested in pursuing a career as ${careerTrack}
                 };
                 
                 setUserProfile(newProfile);
+                console.log("[AutoTrigger] Profile saved to state");
 
                 // Get personalized suggestions
                 try {
@@ -882,6 +897,7 @@ Student: I am interested in pursuing a career as ${careerTrack}
 
                 // Automatically generate pathway based on profile
                 const pathwayPrompt = `Based on my profile, show me the best educational pathways and career opportunities for ${careerTrack}.`;
+                console.log("[AutoTrigger] Calling pathway API with prompt:", pathwayPrompt);
                 
                 const pathwayResponse = await fetch("/api/pathway", {
                   method: "POST",
@@ -900,10 +916,14 @@ Student: I am interested in pursuing a career as ${careerTrack}
                   }),
                 });
 
+                console.log("[AutoTrigger] Pathway response status:", pathwayResponse.status);
+
                 if (pathwayResponse.ok) {
                   const pathwayData = await pathwayResponse.json();
+                  console.log("[AutoTrigger] Pathway data received:", pathwayData);
 
                   if (pathwayData.data && Object.keys(pathwayData.data).length > 0) {
+                    console.log("[AutoTrigger] Setting currentData:", pathwayData.data);
                     setCurrentData(pathwayData.data);
 
                     const hasActualData =
@@ -912,9 +932,23 @@ Student: I am interested in pursuing a career as ${careerTrack}
                       (pathwayData.data.collegePrograms && 
                         pathwayData.data.collegePrograms.length > 0) ||
                       (pathwayData.data.careers && 
-                        pathwayData.data.careers.length > 0);
+                        pathwayData.data.careers.length > 0) ||
+                      (pathwayData.data.uhPrograms && 
+                        pathwayData.data.uhPrograms.length > 0) ||
+                      (pathwayData.data.doePrograms && 
+                        pathwayData.data.doePrograms.length > 0) ||
+                      (pathwayData.data.pathways && 
+                        pathwayData.data.pathways.length > 0) ||
+                      (pathwayData.data.searchResults &&
+                        ((pathwayData.data.searchResults.uhPrograms &&
+                          pathwayData.data.searchResults.uhPrograms.length > 0) ||
+                          (pathwayData.data.searchResults.doePrograms &&
+                            pathwayData.data.searchResults.doePrograms.length > 0)));
 
+                    console.log("[AutoTrigger] hasActualData:", hasActualData);
+                    
                     if (hasActualData) {
+                      console.log("[AutoTrigger] Opening data panel");
                       setDataPanelOpen(true);
                       setActiveDataTab("companies");
                     }
@@ -931,13 +965,21 @@ Student: I am interested in pursuing a career as ${careerTrack}
                     metadata: pathwayData.metadata,
                   };
 
+                  console.log("[AutoTrigger] Adding pathway result message");
                   setMessages(prev => [...prev, assistantMessage]);
+                } else {
+                  const errorText = await pathwayResponse.text();
+                  console.error("[AutoTrigger] Pathway API error:", pathwayResponse.status, errorText);
                 }
               }
+            } else {
+              const errorText = await profileResponse.text();
+              console.error("[AutoTrigger] Profile generation error:", profileResponse.status, errorText);
             }
           } catch (error) {
             console.error("Error generating profile from structured answers:", error);
           } finally {
+            console.log("[AutoTrigger] Setting isAnalyzing and isLoading to false");
             setIsAnalyzing(false);
             setIsLoading(false);
           }
@@ -1031,14 +1073,17 @@ Student: I am interested in pursuing a career as ${careerTrack}
         setNestedOptionsData(null);
       }
 
-      const assistantMessage: Message = {
-        role: "assistant",
-        content: data.message,
-        data: data.data,
-        metadata: data.metadata,
-      };
+      // Don't add assistant message if autoTriggerPathway is true (message already added in structured answers block)
+      if (!data.autoTriggerPathway) {
+        const assistantMessage: Message = {
+          role: "assistant",
+          content: data.message,
+          data: data.data,
+          metadata: data.metadata,
+        };
 
-      setMessages(prev => [...prev, assistantMessage]);
+        setMessages(prev => [...prev, assistantMessage]);
+      }
     } catch (error) {
       console.error("Error:", error);
       const errorMessage = getErrorMessage(currentLanguage);

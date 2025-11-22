@@ -1204,6 +1204,7 @@ export default function ChatMessages({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [loadingSeconds, setLoadingSeconds] = useState(0);
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+  const [selectedExperiences, setSelectedExperiences] = useState<string[]>([]);
   const [showNestedOptions, setShowNestedOptions] = useState(false);
   const [nestedOptionsFor, setNestedOptionsFor] = useState<string | null>(null);
   const [nestedOptions, setNestedOptions] = useState<string[]>([]);
@@ -1222,6 +1223,7 @@ export default function ChatMessages({
   const userMessageCount = messages.filter(m => m.role === "user").length;
   const isSkillsQuestion = userMessageCount === 1; // After answering first question (interests)
   const isEducationQuestion = userMessageCount === 2; // After answering interests, skills (NOW question 3)
+  const isExperiencesQuestion = userMessageCount === 3; // After answering interests, skills, education (NOW question 4)
 
   // Get language-specific welcome message
   const welcomeText = getWelcomeMessage(currentLanguage?.code || "en");
@@ -1230,16 +1232,19 @@ export default function ChatMessages({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
   
-  // Reset selected skills when moving to a different question
+  // Reset selected skills/experiences when moving to a different question
   useEffect(() => {
     if (!isSkillsQuestion) {
       setSelectedSkills([]);
+    }
+    if (!isExperiencesQuestion) {
+      setSelectedExperiences([]);
     }
     if (!isEducationQuestion) {
       setShowNestedOptions(false);
       setNestedOptionsFor(null);
     }
-  }, [isSkillsQuestion, isEducationQuestion]);
+  }, [isSkillsQuestion, isExperiencesQuestion, isEducationQuestion]);
 
   useEffect(() => {
     if (isLoading) {
@@ -1272,11 +1277,21 @@ export default function ChatMessages({
           return [...prev, question];
         }
       });
+    } else if (isExperiencesQuestion && suggestedQuestions.length > 4) {
+      // If it's the experiences question, handle multi-select
+      setSelectedExperiences(prev => {
+        if (prev.includes(question)) {
+          return prev.filter(e => e !== question);
+        } else {
+          return [...prev, question];
+        }
+      });
     } else {
       // For other questions, use single select (immediate send)
       setMessage(question);
       setSuggestedQuestions([]);
       setSelectedSkills([]);
+      setSelectedExperiences([]);
       setShowNestedOptions(false);
     }
   };
@@ -1295,6 +1310,18 @@ export default function ChatMessages({
       setMessage(selectedSkills.join(", "));
       setSuggestedQuestions([]);
       setSelectedSkills([]);
+      // Trigger send if callback provided
+      if (onSendMessage) {
+        setTimeout(onSendMessage, 100);
+      }
+    }
+  };
+  
+  const handleSubmitSelectedExperiences = () => {
+    if (selectedExperiences.length > 0) {
+      setMessage(selectedExperiences.join(", "));
+      setSuggestedQuestions([]);
+      setSelectedExperiences([]);
       // Trigger send if callback provided
       if (onSendMessage) {
         setTimeout(onSendMessage, 100);
@@ -1360,8 +1387,11 @@ export default function ChatMessages({
             <div className="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-250">
               <div className="grid grid-cols-2 gap-3">
                 {suggestedQuestions.map((question, idx) => {
-                  const isSelected = selectedSkills.includes(question);
-                  const isMultiSelect = isSkillsQuestion && suggestedQuestions.length > 4;
+                  const isSelectedSkill = selectedSkills.includes(question);
+                  const isSelectedExperience = selectedExperiences.includes(question);
+                  const isSelected = isSelectedSkill || isSelectedExperience;
+                  const isMultiSelect = (isSkillsQuestion && suggestedQuestions.length > 4) || 
+                                       (isExperiencesQuestion && suggestedQuestions.length > 4);
                   
                   return (
                     <button
@@ -1409,6 +1439,18 @@ export default function ChatMessages({
                     className="bg-black text-white px-8 py-3 rounded-xl font-medium hover:bg-slate-800 transition-all duration-200 shadow-lg hover:shadow-xl"
                   >
                     Continue with {selectedSkills.length} skill{selectedSkills.length !== 1 ? 's' : ''}
+                  </button>
+                </div>
+              )}
+              
+              {/* Submit button for multi-select (experiences question) */}
+              {isExperiencesQuestion && suggestedQuestions.length > 4 && selectedExperiences.length > 0 && (
+                <div className="flex justify-center pt-2">
+                  <button
+                    onClick={handleSubmitSelectedExperiences}
+                    className="bg-black text-white px-8 py-3 rounded-xl font-medium hover:bg-slate-800 transition-all duration-200 shadow-lg hover:shadow-xl"
+                  >
+                    Continue with {selectedExperiences.length} experience{selectedExperiences.length !== 1 ? 's' : ''}
                   </button>
                 </div>
               )}
@@ -1616,8 +1658,11 @@ export default function ChatMessages({
                   <div className="space-y-3">
                     <div className="grid grid-cols-2 gap-2 animate-in slide-in-from-top-2 duration-200">
                       {suggestedQuestions.map((question, idx) => {
-                        const isSelected = selectedSkills.includes(question);
-                        const isMultiSelect = isSkillsQuestion && suggestedQuestions.length > 4;
+                        const isSelectedSkill = selectedSkills.includes(question);
+                        const isSelectedExperience = selectedExperiences.includes(question);
+                        const isSelected = isSelectedSkill || isSelectedExperience;
+                        const isMultiSelect = (isSkillsQuestion && suggestedQuestions.length > 4) || 
+                                             (isExperiencesQuestion && suggestedQuestions.length > 4);
                         
                         return (
                           <button
@@ -1654,7 +1699,7 @@ export default function ChatMessages({
                       })}
                     </div>
                     
-                    {/* Submit button for multi-select */}
+                    {/* Submit button for multi-select (skills) */}
                     {isSkillsQuestion && suggestedQuestions.length > 4 && selectedSkills.length > 0 && (
                       <div className="flex justify-center">
                         <button
@@ -1662,6 +1707,18 @@ export default function ChatMessages({
                           className="bg-black text-white px-6 py-2.5 rounded-xl font-medium hover:bg-slate-800 transition-all duration-200 text-sm shadow-md"
                         >
                           Continue with {selectedSkills.length} skill{selectedSkills.length !== 1 ? 's' : ''}
+                        </button>
+                      </div>
+                    )}
+                    
+                    {/* Submit button for multi-select (experiences) */}
+                    {isExperiencesQuestion && suggestedQuestions.length > 4 && selectedExperiences.length > 0 && (
+                      <div className="flex justify-center">
+                        <button
+                          onClick={handleSubmitSelectedExperiences}
+                          className="bg-black text-white px-6 py-2.5 rounded-xl font-medium hover:bg-slate-800 transition-all duration-200 text-sm shadow-md"
+                        >
+                          Continue with {selectedExperiences.length} experience{selectedExperiences.length !== 1 ? 's' : ''}
                         </button>
                       </div>
                     )}

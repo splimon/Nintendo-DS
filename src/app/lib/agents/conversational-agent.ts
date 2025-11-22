@@ -416,9 +416,9 @@ I can help you explore educational pathways in Hawaii. What interests you?`;
       
       case 'clarification':
         if (hasProfile) {
-          return `Yes, I'm confident about that based on your profile. Want me to search for programs?`;
+          return `Done! Would you like to view the programs and pathways that match your interests?`;
         }
-        return `Yes, I'm confident about that. Want me to search for programs?`;
+        return `Done! Would you like to view the programs and pathways that match your interests?`;
       
       case 'reasoning':
         return `Happy to explain. What would you like to know more about?`;

@@ -19,28 +19,28 @@ const ONBOARDING_QUESTIONS = {
   en: [
     "Hi! I'm here to help you discover the perfect educational pathway in Hawaii. Let's start with the first question: **What are you interested in?** \n\nTell me about the subjects, fields, or topics that excite you!",
     "Great! Now, **what are your skills?** \n\nThink about both technical abilities (like coding or data analysis) and soft skills (like communication or teamwork).",
-    "Excellent! Now, **what is your current education level?** \n\nPlease select one from the options below:",
+    "Excellent! Now, **what is your current education level?**",
     "Awesome! Next, **what are your experiences?** \n\nTell me about your education background, work experience, volunteer activities, or any relevant experiences you have.",
     "Perfect! Finally, **what is your desired career track or job title?** \n\nWhat career are you interested in pursuing? It's okay if you're still exploring options!",
   ],
   haw: [
     "Aloha! Ke kōkua nei au iā ʻoe e ʻimi i ka ala hoʻonaʻauao pono ma Hawaiʻi. E hoʻomaka kākou me ka nīnau mua: **He aha kou makemake?** \n\nE haʻi mai e pili ana i nā kumuhana e hoihoi ai ʻoe!",
     "Maikaʻi! Eia hou, **he aha kou mau hana maikaʻi?** \n\nE noʻonoʻo e pili ana i nā hana kekepania a me nā hana ʻē aʻe.",
-    "Maikaʻi! Eia hou, **he aha kou papa hoʻonaʻauao?** \n\nE koho i hoʻokahi mai nā koho ma lalo:",
+    "Maikaʻi! Eia hou, **he aha kou papa hoʻonaʻauao?**",
     "Maikaʻi loa! A laila, **he aha kou mau ʻike?** \n\nE haʻi mai e pili ana i kou hoʻonaʻauao, hana, a me nā ʻike ʻē aʻe.",
     "Hemolele! Ma hope, **he aha kou ʻoihana makemake?** \n\nHe aha ka ʻoihana āu e makemake ai e hoʻomau?",
   ],
   hwp: [
     "Howzit! I going help you find da perfect educational pathway in Hawaii. Let's start with da first question: **What you interested in?** \n\nTell me bout da kine subjects or topics you like!",
     "Good! Now, **what kine skills you get?** \n\nThink bout both technical stuff (like coding) and people skills (like working wit oddas).",
-    "Good! Now, **what stay your education level?** \n\nPick one from da options:",
+    "Good! Now, **what stay your education level?**",
     "Nice! Next one, **what kine experience you get?** \n\nTell me bout your education, work, volunteer stuff, or anyting relevant.",
     "Perfect! Last one, **what kine career or job you like do?** \n\nWhat career you interested in? Stay cool if you still exploring!",
   ],
   tl: [
     "Kumusta! Tutulungan kitang makahanap ng perpektong landas ng edukasyon sa Hawaii. Magsimula tayo sa unang tanong: **Ano ang iyong interes?** \n\nSabihin mo sa akin ang mga paksa o larangan na pumupukaw sa iyo!",
     "Mahusay! Ngayon, **ano ang iyong mga kasanayan?** \n\nIsipin ang teknikal (tulad ng coding) at soft skills (tulad ng komunikasyon).",
-    "Mahusay! Ngayon, **ano ang iyong antas ng edukasyon?** \n\nPumili ng isa mula sa mga pagpipilian:",
+    "Mahusay! Ngayon, **ano ang iyong antas ng edukasyon?**",
     "Napakagaling! Susunod, **ano ang iyong mga karanasan?** \n\nSabihin mo ang tungkol sa iyong edukasyon, trabaho, boluntaryo, o anumang nauugnay na karanasan.",
     "Perpekto! Panghuli, **ano ang nais mong karera o posisyon?** \n\nAnong karera ang gusto mong sundin? Okay lang kung nag-e-explore ka pa!",
   ],
@@ -912,51 +912,23 @@ export async function POST(request: NextRequest) {
     const progress = analyzeOnboardingProgress(messages);
     console.log("Onboarding progress:", progress);
 
-    // If all 4 questions have been answered, trigger profile generation
-    if (progress.questionsAsked >= 4) {
-      console.log("=== ALL 4 QUESTIONS ANSWERED - GENERATING PROFILE ===");
+    // If all 5 questions have been answered, trigger profile generation
+    if (progress.questionsAsked >= 5) {
+      console.log("=== ALL 5 QUESTIONS ANSWERED - GENERATING PROFILE ===");
 
       const transitionMessages: Record<string, string> = {
-        en: "Perfect! I have all the information I need. Let me analyze your profile and show you personalized career opportunities and educational pathways from Hawaii's programs and job market.",
-        haw: "Maikaʻi loa! Ua loaʻa iaʻu nā ʻike a pau. E nānā au i kou moʻolelo a e hōʻike aku i nā ʻoihana kūpono.",
-        hwp: "Shoots! I get all da info I need. Lemme check your profile and show you da perfect career opportunities yeah.",
-        tl: "Perpekto! Mayroon na akong lahat ng kailangan kong impormasyon. Suriin ko ang iyong profile at ipapakita ang mga oportunidad.",
-      };
-
-      const suggestedQuestionsByLanguage: Record<string, string[]> = {
-        en: [
-          "Show me career matches",
-          "What programs are available?",
-          "Tell me about job openings",
-          "What skills should I develop?",
-        ],
-        haw: [
-          "E hōʻike mai i nā ʻoihana kūpono",
-          "He aha nā papahana?",
-          "E haʻi mai e pili ana i nā wahi hana",
-          "He aha nā hana maikaʻi e aʻo ai?",
-        ],
-        hwp: [
-          "Show me da career matches",
-          "What programs get?",
-          "Tell me bout da jobs",
-          "What skills I should learn?",
-        ],
-        tl: [
-          "Ipakita ang mga tugmang karera",
-          "Anong mga programa?",
-          "Sabihin tungkol sa mga trabaho",
-          "Anong skills dapat matuto?",
-        ],
+        en: "Perfect! I've captured your profile. Let me find the best programs and pathways for you...",
+        haw: "Maikaʻi loa! Ua loaʻa iaʻu kou moʻolelo. E ʻimi nei au i nā papahana maikaʻi loa nōu...",
+        hwp: "Shoots! I got your profile. Lemme find da best programs for you...",
+        tl: "Perpekto! Nakuha ko na ang iyong profile. Hanapin ko ang mga pinakamahusay na programa para sa iyo...",
       };
 
       return NextResponse.json({
         message: transitionMessages[language] || transitionMessages.en,
-        suggestedQuestions:
-          suggestedQuestionsByLanguage[language] ||
-          suggestedQuestionsByLanguage.en,
+        suggestedQuestions: [], // No quick actions - will auto-trigger
         readyForProfile: true,
         profilingComplete: true,
+        autoTriggerPathway: true, // New flag to trigger automatic pathway search
         structuredAnswers: {
           interests: progress.interests,
           skills: progress.skills,
