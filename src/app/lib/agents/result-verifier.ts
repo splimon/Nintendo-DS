@@ -185,15 +185,22 @@ Important principles:
 
 PROFILE-BASED SCORING BOOST:
 - If a program aligns with the user's stated interests → +1 to score
-- If a program aligns with the user's stated goals → +1 to score
+- If a program aligns with the user's stated goals/desired career → +2 to score (HIGHEST PRIORITY)
+- If a program is clearly unrelated to the user's career goals → -2 to score
 - Maximum base score is still 10, but profile alignment can help borderline programs
 
+CAREER GOAL MATCHING (CRITICAL):
+- If the user has a stated career goal (e.g., "Senior Software Engineer", "Nurse", "Chef"), programs MUST be relevant to that career path
+- Example: User wants "Senior Software Engineer" → Computer Science programs score high (8-10), Automotive Technology scores very low (1-2)
+- Example: User wants "Chef" → Culinary Arts scores high (9-10), Business Technology scores moderate (4-5) only if it's hospitality-related
+- DO NOT recommend programs in completely different fields unless they explicitly support the career goal
+
 Scoring guidelines:
-- Same subject, same level as query → Score 9-10 (e.g., HS engineering when asking about HS engineering)
-- Same subject, different level → Score 7-8 (e.g., college engineering when asking about HS engineering)
-- Related subject, any level → Score 6-7 (e.g., computer engineering when asking about computer science)
-- Tangentially related → Score 4-5 (e.g., mathematics when asking about engineering)
-- Unrelated subject → Score 0-3 (e.g., culinary arts when asking about engineering)
+- Same subject, same level as query, aligns with career goal → Score 9-10 (e.g., Computer Science for Software Engineer goal)
+- Same subject, different level, aligns with career goal → Score 7-8 (e.g., HS comp sci when goal is college-level SE)
+- Related subject, any level, supports career goal → Score 6-7 (e.g., Information Technology for Software Engineer)
+- Tangentially related, weak support for career goal → Score 3-5 (e.g., Business Tech for SE - only if very specific focus)
+- Unrelated to career goal → Score 0-2 (e.g., Automotive Technology for Software Engineer goal)
 
 Examples of using conversation context:
 - Conversation History shows: "User: Show me computer science pathways"

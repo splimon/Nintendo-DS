@@ -52,6 +52,37 @@ interface UserProfile {
 }
 
 /**
+ * Filter results based on user's education level
+ * This ensures high school programs are only shown to high school students
+ */
+function filterResultsByEducationLevel(
+  data: CollectedData,
+  educationLevel: string | null
+): CollectedData {
+  // If education level is not high school, remove high school programs
+  const shouldIncludeHS = 
+    !educationLevel || 
+    educationLevel === "high_school" || 
+    educationLevel === "middle_school";
+
+  if (!shouldIncludeHS) {
+    console.log(
+      `[Filter] Removing high school programs - User education level: ${educationLevel}`
+    );
+    return {
+      ...data,
+      highSchoolPrograms: [], // Remove ALL high school programs
+    };
+  }
+
+  console.log(
+    `[Filter] Keeping high school programs - User education level: ${educationLevel}`
+  );
+  return data;
+}
+
+
+/**
  * Clean tool catalog with simple, clear descriptions
  */
 const TOOL_CATALOG = {
@@ -405,6 +436,34 @@ export async function planToolCalls(
 
   const systemPrompt = `You are a tool planning agent for Hawaii's educational pathway system.
 
+USER EDUCATION LEVEL: ${profile?.educationLevel || "unknown"}
+CRITICAL FILTERING RULES BASED ON EDUCATION LEVEL:
+${profile?.educationLevel === "high_school" ? `
+- User is in HIGH SCHOOL
+- INCLUDE: high school programs (search_hs_programs, get_hs_program_details, trace_from_hs)
+- INCLUDE: college programs for FUTURE planning (search_college_programs, get_college_by_cip)
+- INCLUDE: career exploration tools (get_careers)
+` : profile?.educationLevel?.startsWith("college_") ? `
+- User is in COLLEGE (${profile.educationLevel})
+- EXCLUDE: Do NOT call high school program tools (search_hs_programs, get_hs_program_details, trace_from_hs)
+- INCLUDE: college programs (search_college_programs, get_college_by_cip)
+- INCLUDE: career exploration tools (get_careers)
+` : profile?.educationLevel === "working_professional" ? `
+- User is a WORKING PROFESSIONAL
+- EXCLUDE: Do NOT call high school program tools (search_hs_programs, get_hs_program_details, trace_from_hs)
+- INCLUDE: college programs for ADVANCED degrees or career change (search_college_programs, get_college_by_cip)
+- INCLUDE: career advancement tools (get_careers)
+- FOCUS: Programs that lead to career advancement, graduate degrees, certifications
+` : profile?.educationLevel === "graduate" ? `
+- User is a GRADUATE STUDENT
+- EXCLUDE: Do NOT call high school program tools
+- EXCLUDE: Do NOT call undergraduate college tools unless for context
+- INCLUDE: Advanced degree programs
+- INCLUDE: career research tools (get_careers)
+` : `
+- Education level unknown - use all tools but PRIORITIZE based on context
+`}
+
 AVAILABLE TOOLS:
 ${Object.entries(TOOL_CATALOG)
   .map(
@@ -420,17 +479,22 @@ ${searchStrategy ? `SEARCH STRATEGY FOR THIS ATTEMPT:
 ` : ""}
 
 PLANNING STRATEGY:
-1. For general queries: Start with trace_pathway(keywords)
-2. For specific programs: Use get_hs_program_details or trace_from_hs
-3. For "where" questions: Include school/campus lookup tools
-4. Always trace complete pathways (HS → College → Career)
-${searchStrategy?.useCIPSearch ? "\n5. IMPORTANT: Use CIP-based searches for broader results" : ""}
+1. FIRST: Check user's education level and filter tools accordingly
+2. For working professionals: Focus on advanced degrees, certifications, career advancement
+3. For college students: Focus on college programs and career outcomes (NO high school tools)
+4. For high school students: Include both HS and college programs for pathway planning
+5. For general queries: Start with appropriate trace_pathway(keywords) or trace_from_hs
+6. For specific programs: Use get_hs_program_details or get_college_by_cip based on education level
+7. For "where" questions: Include school/campus lookup tools
+8. Always trace complete pathways appropriate to user's level
+${searchStrategy?.useCIPSearch ? "\n9. IMPORTANT: Use CIP-based searches for broader results" : ""}
 
 OUTPUT RULES:
 - Output ONLY tool calls, one per line
 - Format: tool_name(arguments)
 - Arguments must be valid JSON arrays or strings
-- Use 3-5 tools minimum for comprehensive results`;
+- Use 3-5 tools minimum for comprehensive results
+- RESPECT the education level filtering rules above`;
 
   const userPrompt = `Query: "${message}"
 Keywords extracted: ${JSON.stringify(keywords)}
@@ -739,27 +803,38 @@ async function verifyResults(
   message: string,
   collectedData: any,
   conversationHistory: any[] = [],
-  extractedIntent?: string // ADD THIS PARAMETER
+  extractedIntent?: string, // ADD THIS PARAMETER
+  userProfile?: UserProfile // ADD USER PROFILE
 ): Promise<any> {
   console.log(
     `[Verifier] Starting verification for ${collectedData.highSchoolPrograms.length} HS + ${collectedData.collegePrograms.length} college programs`
   );
 
   try {
-    // Verify high school programs - PASS extractedIntent
+    // Create profile object for verifier (with careerGoals)
+    const verifierProfile = userProfile ? {
+      interests: userProfile.interests || [],
+      goals: userProfile.careerGoals || [], // Map careerGoals to goals
+      gradeLevel: userProfile.educationLevel || undefined,
+      location: userProfile.location || undefined,
+    } : undefined;
+
+    // Verify high school programs - PASS extractedIntent and profile
     const verifiedHS = await resultVerifier.verifyHighSchoolPrograms(
       message,
       collectedData.highSchoolPrograms,
       conversationHistory, // ADD THIS
-      extractedIntent // ADD THIS
+      extractedIntent, // ADD THIS
+      verifierProfile // ADD PROFILE
     );
 
-    // Verify college programs - PASS extractedIntent
+    // Verify college programs - PASS extractedIntent and profile
     const verifiedCollege = await resultVerifier.verifyCollegePrograms(
       message,
       collectedData.collegePrograms,
       conversationHistory, // ADD THIS
-      extractedIntent // ADD THIS
+      extractedIntent, // ADD THIS
+      verifierProfile // ADD PROFILE
     );
 
     // Rebuild schools and campuses sets from verified results
@@ -1111,13 +1186,17 @@ export async function processUserQuery(
         enhancedQuery,
         collectedData,
         conversationHistory,
-        extractedIntent
+        extractedIntent,
+        enhancedProfile // Pass the user profile
       );
+
+      // 4.5. FILTER RESULTS BASED ON EDUCATION LEVEL
+      const filteredData = filterResultsByEducationLevel(verifiedData, enhancedProfile.educationLevel);
 
       // 5. REFLECT ON RESULTS
       const reflection = await reflectionAgent.reflect(
         message, // Use original query for reflection context
-        verifiedData,
+        filteredData, // Use filtered data for reflection
         enhancedProfile,
         conversationHistory,
         attemptNumber
@@ -1130,7 +1209,7 @@ export async function processUserQuery(
         );
         
         // 6.5. AGGREGATE DATA (once, for both response and frontend)
-        const aggregatedData = await aggregateDataForResponse(verifiedData);
+        const aggregatedData = await aggregateDataForResponse(filteredData); // Use filtered data
         
         // 7. Generate response using Response Formatter Agent with aggregated data
         const response = await generateResponse(

@@ -14,9 +14,13 @@ export async function POST(request: NextRequest) {
       userMessageCount,
       conversationMetrics,
       language = "en",
+      structuredAnswers, // New: structured onboarding answers
     } = await request.json();
 
     console.log(`[Generate Profile API] 🎯 TIER 0 Initial Profile Request (Language: ${language})`);
+    if (structuredAnswers) {
+      console.log(`[Generate Profile API] 📋 Using structured onboarding answers`);
+    }
 
     if (!transcript || typeof transcript !== "string") {
       return NextResponse.json(
@@ -25,19 +29,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Ensure we have enough conversation content - 3 messages as requested
-    if (userMessageCount < 3) {
+    // If structured answers are provided, we can generate profile with fewer messages
+    const minMessages = structuredAnswers ? 1 : 3;
+    
+    // Ensure we have enough conversation content
+    if (userMessageCount < minMessages) {
       return NextResponse.json(
         { error: "Insufficient conversation data", needMoreMessages: true },
         { status: 400 }
       );
     }
 
-    // Call the profile generation agent
+    // Call the profile generation agent with structured answers if available
     const enhancedProfile = await generateComprehensiveProfile(
       transcript,
       conversationMetrics,
-      language
+      language,
+      structuredAnswers // Pass structured answers
     );
 
     if (!enhancedProfile) {

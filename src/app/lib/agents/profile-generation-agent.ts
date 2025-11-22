@@ -91,22 +91,48 @@ function cleanJsonResponse(response: string): string {
  * @param transcript - Full conversation history
  * @param conversationMetrics - Metrics about the conversation
  * @param language - Language code (en, haw, hwp, tl)
+ * @param structuredAnswers - Optional structured answers from onboarding (interests, skills, experiences, educationLevel, careerTrack)
  * @returns Enhanced profile or null if generation fails
  */
 export async function generateComprehensiveProfile(
   transcript: string,
   conversationMetrics: any,
-  language: string = "en"
+  language: string = "en",
+  structuredAnswers?: { 
+    interests: string; 
+    skills: string; 
+    experiences: string; 
+    educationLevel: string;
+    careerTrack: string;
+  }
 ): Promise<EnhancedProfile | null> {
   console.log(`[Profile Generation Agent] 🎯 Generating initial profile (Language: ${language})`);
+  if (structuredAnswers) {
+    console.log(`[Profile Generation Agent] 📋 Using structured onboarding answers`);
+  }
   
   const languageContext =
     language !== "en"
       ? `Note: The conversation may contain ${language === "haw" ? "Hawaiian (ʻŌlelo Hawaiʻi)" : language === "hwp" ? "Hawaiian Pidgin" : language === "tl" ? "Tagalog" : "English"} language. Understand it in context but write the profile summary in ENGLISH for system use.`
       : "";
 
+  // If structured answers are provided, create an enhanced context
+  const structuredContext = structuredAnswers
+    ? `
+STRUCTURED ONBOARDING ANSWERS (USE THIS AS PRIMARY SOURCE - HIGHEST PRIORITY):
+- INTERESTS: ${structuredAnswers.interests}
+- SKILLS: ${structuredAnswers.skills}
+- EXPERIENCES/BACKGROUND: ${structuredAnswers.experiences}
+- EDUCATION LEVEL: ${structuredAnswers.educationLevel}
+- DESIRED CAREER: ${structuredAnswers.careerTrack}
+
+These answers are direct, explicit, and USER-PROVIDED - PRIORITIZE extracting information from these structured responses ABOVE ALL OTHER INFERENCES.
+`
+    : "";
+
   const systemPrompt = `You are an expert career counseling analyst. Analyze this detailed conversation between a career counselor and a person seeking career guidance in Hawaii. Extract comprehensive information to build a rich user profile for personalized career guidance.
 ${languageContext}
+${structuredContext}
 
 CONVERSATION METRICS:
 - Total messages: ${conversationMetrics.totalMessages}
@@ -115,13 +141,24 @@ CONVERSATION METRICS:
 - Language used: ${language}
 
 ANALYSIS INSTRUCTIONS:
-1. Extract EXPLICIT information mentioned in the conversation
-2. Infer REASONABLE conclusions based on context and conversation patterns
+1. ${structuredAnswers ? "PRIORITIZE the structured onboarding answers above - they are the MOST EXPLICIT and USER-PROVIDED responses" : "Extract EXPLICIT information mentioned in the conversation"}
+2. ${structuredAnswers ? "The EDUCATION LEVEL field is explicitly provided - use it EXACTLY for educationLevel and currentStatus fields" : "Infer REASONABLE conclusions based on context and conversation patterns"}
 3. Use null/empty arrays for truly unknown information
 4. Be specific and detailed - capture nuances and context
 5. Consider Hawaii-specific factors (island location, local culture, etc.)
 6. IMPORTANT: Write the summary in ENGLISH regardless of conversation language
-7. CRITICAL: Use appropriate terminology based on the person's actual status - NOT everyone is a student
+7. CRITICAL: For educationLevel field, if EDUCATION LEVEL is provided in structured answers, map it as follows:
+   - "high school" or mentions grade → "high_school"
+   - "college - freshman" → "college_freshman"
+   - "college - sophomore" → "college_sophomore"
+   - "college - junior" → "college_junior"
+   - "college - senior" → "college_senior"
+   - "graduate student" or mentions masters/phd → "graduate"
+   - "working professional" or mentions current job → "working_professional"
+   - "career changer" → "working_professional"
+8. ${structuredAnswers ? "Map the SKILLS mentioned to specific technical or soft skills" : "Extract skills from context"}
+9. ${structuredAnswers ? "Use the DESIRED CAREER to inform careerGoals accurately" : "Identify career goals from conversation"}
+10. ${structuredAnswers ? "If user mentions 'Junior [role]' seeking 'Senior [role]', set educationLevel to 'working_professional' and experienceLevel to 'experienced'" : "Infer experience from conversation"}
 
 HOW TO REFER TO THE PERSON IN THE SUMMARY:
 - If currently in school (K-12 or college): "the student"
@@ -132,6 +169,27 @@ HOW TO REFER TO THE PERSON IN THE SUMMARY:
 - If returning to workforce: "the individual returning to the workforce"
 - If status unclear: "the individual" (safe default)
 - NEVER assume "student" unless they are actually currently enrolled in school
+
+${structuredAnswers ? `
+SPECIAL INSTRUCTIONS FOR STRUCTURED DATA:
+- INTERESTS: Parse "${structuredAnswers.interests}" into specific fields
+- SKILLS: Parse "${structuredAnswers.skills}" - categorize into technical skills (coding, programming languages) and soft skills (communication, leadership)
+- EXPERIENCES: "${structuredAnswers.experiences}" - use this to determine experienceLevel
+- EDUCATION LEVEL: "${structuredAnswers.educationLevel}" - THIS IS EXPLICITLY PROVIDED. Map it to educationLevel enum EXACTLY:
+  * If contains "high school" → "high_school"
+  * If contains "freshman" → "college_freshman"
+  * If contains "sophomore" → "college_sophomore"
+  * If contains "junior" (referring to school year) → "college_junior"
+  * If contains "senior" (referring to school year) → "college_senior"
+  * If contains "graduate" or "masters" or "phd" → "graduate"
+  * If contains "working" or "professional" or mentions current employment → "working_professional"
+  * If contains "career changer" → "working_professional"
+- DESIRED CAREER: "${structuredAnswers.careerTrack}" - This should DIRECTLY inform the careerGoals array
+- IMPORTANT: If EXPERIENCES mentions "Junior [job]" seeking "Senior [job]", this means:
+  * educationLevel = "working_professional"
+  * experienceLevel = "experienced" (NOT "entry_level")
+  * currentStatus = "employed"
+` : ""}
 
 Return ONLY valid JSON in this exact format. 
 

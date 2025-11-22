@@ -9,6 +9,7 @@ import {
   GraduationCap,
   // Briefcase,
   ChevronRight,
+  Check,
 } from "lucide-react";
 import { Message, UserProfile } from "./types";
 import { PROGRAM_PREFIX_MAP } from "@/app/lib/helpers/program-course-prefix";
@@ -151,6 +152,12 @@ interface ChatMessagesProps {
   setSidebarOpen: (open: boolean) => void;
   navSidebarOpen: boolean;
   currentLanguage?: { code: string; name: string; nativeName: string };
+  onSendMessage?: () => void; // Add callback for sending message
+  nestedOptionsData?: {
+    hasNestedOptions: boolean;
+    nestedOptionsFor: string | null;
+    nestedOptions: string[];
+  };
 }
 
 interface ProgramDetails {
@@ -1190,13 +1197,31 @@ export default function ChatMessages({
   dataPanelOpen,
   navSidebarOpen,
   currentLanguage,
+  onSendMessage,
+  nestedOptionsData,
 }: ChatMessagesProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [loadingSeconds, setLoadingSeconds] = useState(0);
-
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+  const [showNestedOptions, setShowNestedOptions] = useState(false);
+  const [nestedOptionsFor, setNestedOptionsFor] = useState<string | null>(null);
+  const [nestedOptions, setNestedOptions] = useState<string[]>([]);
+  
+  // Update nested options when data changes from API
+  useEffect(() => {
+    if (nestedOptionsData?.nestedOptions) {
+      setNestedOptions(nestedOptionsData.nestedOptions);
+    }
+  }, [nestedOptionsData]);
+  
   // Check if this is the initial state (no user messages yet)
   const isInitialState = messages.filter(m => m.role === "user").length === 0;
+  
+  // Check if we're on question 2 (skills question) based on message count
+  const userMessageCount = messages.filter(m => m.role === "user").length;
+  const isSkillsQuestion = userMessageCount === 1; // After answering first question (interests)
+  const isEducationQuestion = userMessageCount === 2; // After answering interests, skills (NOW question 3)
 
   // Get language-specific welcome message
   const welcomeText = getWelcomeMessage(currentLanguage?.code || "en");
@@ -1204,6 +1229,17 @@ export default function ChatMessages({
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+  
+  // Reset selected skills when moving to a different question
+  useEffect(() => {
+    if (!isSkillsQuestion) {
+      setSelectedSkills([]);
+    }
+    if (!isEducationQuestion) {
+      setShowNestedOptions(false);
+      setNestedOptionsFor(null);
+    }
+  }, [isSkillsQuestion, isEducationQuestion]);
 
   useEffect(() => {
     if (isLoading) {
@@ -1217,8 +1253,53 @@ export default function ChatMessages({
   }, [isLoading]);
 
   const handleSuggestedQuestionClick = (question: string) => {
-    setMessage(question);
+    // If it's the education question and user clicked on "College", show nested options
+    if (isEducationQuestion && question.toLowerCase().includes("college") || 
+        question.toLowerCase().includes("kulanui") || 
+        question.toLowerCase().includes("kolehiyo")) {
+      setShowNestedOptions(true);
+      setNestedOptionsFor(question);
+      return;
+    }
+    
+    // If it's the skills question, handle multi-select
+    if (isSkillsQuestion && suggestedQuestions.length > 4) {
+      // Toggle selection
+      setSelectedSkills(prev => {
+        if (prev.includes(question)) {
+          return prev.filter(s => s !== question);
+        } else {
+          return [...prev, question];
+        }
+      });
+    } else {
+      // For other questions, use single select (immediate send)
+      setMessage(question);
+      setSuggestedQuestions([]);
+      setSelectedSkills([]);
+      setShowNestedOptions(false);
+    }
+  };
+  
+  const handleNestedOptionClick = (option: string) => {
+    // Combine parent choice with nested choice (e.g., "College - Freshman")
+    const fullAnswer = `${nestedOptionsFor} - ${option}`;
+    setMessage(fullAnswer);
     setSuggestedQuestions([]);
+    setShowNestedOptions(false);
+    setNestedOptionsFor(null);
+  };
+  
+  const handleSubmitSelectedSkills = () => {
+    if (selectedSkills.length > 0) {
+      setMessage(selectedSkills.join(", "));
+      setSuggestedQuestions([]);
+      setSelectedSkills([]);
+      // Trigger send if callback provided
+      if (onSendMessage) {
+        setTimeout(onSendMessage, 100);
+      }
+    }
   };
 
   const getLeftOffset = () => {
@@ -1275,27 +1356,63 @@ export default function ChatMessages({
           )}
 
           {/* Suggested Questions */}
-          {suggestedQuestions.length > 0 && !isLoading && showSuggestions && (
+          {suggestedQuestions.length > 0 && !isLoading && showSuggestions && !showNestedOptions && (
             <div className="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-250">
               <div className="grid grid-cols-2 gap-3">
-                {suggestedQuestions.map((question, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => handleSuggestedQuestionClick(question)}
-                    className="group bg-white border-2 border-slate-200 hover:border-black hover:bg-slate-50 text-slate-700 hover:text-black px-5 py-4 rounded-xl transition-all duration-200 text-left"
-                    style={{
-                      animation: `fadeInUp 0.5s ease-out ${idx * 0.1}s both`
-                    }}
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-sm font-medium line-clamp-2">
-                        {question}
-                      </span>
-                      <ArrowRight className="w-4 h-4 opacity-40 group-hover:opacity-100 group-hover:translate-x-1 transition-all flex-shrink-0" />
-                    </div>
-                  </button>
-                ))}
+                {suggestedQuestions.map((question, idx) => {
+                  const isSelected = selectedSkills.includes(question);
+                  const isMultiSelect = isSkillsQuestion && suggestedQuestions.length > 4;
+                  
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => handleSuggestedQuestionClick(question)}
+                      className={`group ${
+                        isSelected
+                          ? "bg-black border-black text-white"
+                          : "bg-white border-slate-200 hover:border-black hover:bg-slate-50 text-slate-700 hover:text-black"
+                      } border-2 px-5 py-4 rounded-xl transition-all duration-200 text-left relative`}
+                      style={{
+                        animation: `fadeInUp 0.5s ease-out ${idx * 0.1}s both`
+                      }}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-sm font-medium line-clamp-2">
+                          {question}
+                        </span>
+                        {isMultiSelect ? (
+                          <div
+                            className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                              isSelected
+                                ? "border-white bg-white"
+                                : "border-slate-300 group-hover:border-black"
+                            }`}
+                          >
+                            {isSelected && (
+                              <Check className="w-3.5 h-3.5 text-black" />
+                            )}
+                          </div>
+                        ) : (
+                          <ArrowRight className="w-4 h-4 opacity-40 group-hover:opacity-100 group-hover:translate-x-1 transition-all flex-shrink-0" />
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
+              
+              {/* Submit button for multi-select (skills question) */}
+              {isSkillsQuestion && suggestedQuestions.length > 4 && selectedSkills.length > 0 && (
+                <div className="flex justify-center pt-2">
+                  <button
+                    onClick={handleSubmitSelectedSkills}
+                    className="bg-black text-white px-8 py-3 rounded-xl font-medium hover:bg-slate-800 transition-all duration-200 shadow-lg hover:shadow-xl"
+                  >
+                    Continue with {selectedSkills.length} skill{selectedSkills.length !== 1 ? 's' : ''}
+                  </button>
+                </div>
+              )}
+              
               <style jsx>{`
                 @keyframes fadeInUp {
                   from {
@@ -1308,6 +1425,47 @@ export default function ChatMessages({
                   }
                 }
               `}</style>
+            </div>
+          )}
+          
+          {/* Nested Options (College Year Selection) */}
+          {showNestedOptions && nestedOptions.length > 0 && (
+            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="text-center">
+                <p className="text-sm text-slate-600 mb-3">
+                  Select your college year:
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {nestedOptions.map((option, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleNestedOptionClick(option)}
+                    className="group bg-white border-2 border-slate-200 hover:border-black hover:bg-slate-50 text-slate-700 hover:text-black px-5 py-4 rounded-xl transition-all duration-200 text-left"
+                    style={{
+                      animation: `fadeInUp 0.5s ease-out ${idx * 0.1}s both`
+                    }}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-sm font-medium">
+                        {option}
+                      </span>
+                      <ArrowRight className="w-4 h-4 opacity-40 group-hover:opacity-100 group-hover:translate-x-1 transition-all flex-shrink-0" />
+                    </div>
+                  </button>
+                ))}
+              </div>
+              <div className="flex justify-center">
+                <button
+                  onClick={() => {
+                    setShowNestedOptions(false);
+                    setNestedOptionsFor(null);
+                  }}
+                  className="text-sm text-slate-500 hover:text-slate-700 underline"
+                >
+                  Back to education levels
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -1434,7 +1592,8 @@ export default function ChatMessages({
 
         {suggestedQuestions.length > 0 &&
           !isLoading &&
-          messages.filter(m => m.role === "user").length < 3 && (
+          !showNestedOptions &&
+          messages.filter(m => m.role === "user").length < 5 && (
             <div className="flex justify-center py-6">
               <div className="max-w-2xl w-full">
                 <button
@@ -1454,26 +1613,103 @@ export default function ChatMessages({
                 </button>
 
                 {showSuggestions && (
-                  <div className="grid grid-cols-2 gap-2 animate-in slide-in-from-top-2 duration-200">
-                    {suggestedQuestions.map((question, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => handleSuggestedQuestionClick(question)}
-                        className="group relative bg-white border-2 border-black hover:bg-black hover:text-white text-black px-4 py-3 rounded-xl transition-all duration-200 text-left"
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-sm font-medium line-clamp-2">
-                            {question}
-                          </span>
-                          <ArrowRight className="w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity flex-shrink-0" />
-                        </div>
-                      </button>
-                    ))}
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-2 animate-in slide-in-from-top-2 duration-200">
+                      {suggestedQuestions.map((question, idx) => {
+                        const isSelected = selectedSkills.includes(question);
+                        const isMultiSelect = isSkillsQuestion && suggestedQuestions.length > 4;
+                        
+                        return (
+                          <button
+                            key={idx}
+                            onClick={() => handleSuggestedQuestionClick(question)}
+                            className={`group relative ${
+                              isSelected
+                                ? "bg-black text-white border-black"
+                                : "bg-white border-black hover:bg-black hover:text-white text-black"
+                            } border-2 px-4 py-3 rounded-xl transition-all duration-200 text-left`}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-sm font-medium line-clamp-2">
+                                {question}
+                              </span>
+                              {isMultiSelect ? (
+                                <div
+                                  className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                                    isSelected
+                                      ? "border-white bg-white"
+                                      : "border-current"
+                                  }`}
+                                >
+                                  {isSelected && (
+                                    <Check className="w-3.5 h-3.5 text-black" />
+                                  )}
+                                </div>
+                              ) : (
+                                <ArrowRight className="w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    
+                    {/* Submit button for multi-select */}
+                    {isSkillsQuestion && suggestedQuestions.length > 4 && selectedSkills.length > 0 && (
+                      <div className="flex justify-center">
+                        <button
+                          onClick={handleSubmitSelectedSkills}
+                          className="bg-black text-white px-6 py-2.5 rounded-xl font-medium hover:bg-slate-800 transition-all duration-200 text-sm shadow-md"
+                        >
+                          Continue with {selectedSkills.length} skill{selectedSkills.length !== 1 ? 's' : ''}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             </div>
           )}
+        
+        {/* Nested Options in Conversation (College Year) */}
+        {showNestedOptions && nestedOptions.length > 0 && !isLoading && (
+          <div className="flex justify-center py-6">
+            <div className="max-w-2xl w-full space-y-3">
+              <div className="text-center">
+                <p className="text-sm text-slate-600 mb-3">
+                  Select your college year:
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-2 animate-in slide-in-from-top-2 duration-200">
+                {nestedOptions.map((option, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleNestedOptionClick(option)}
+                    className="group relative bg-white border-2 border-black hover:bg-black hover:text-white text-black px-4 py-3 rounded-xl transition-all duration-200 text-left"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-medium">
+                        {option}
+                      </span>
+                      <ArrowRight className="w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                    </div>
+                  </button>
+                ))}
+              </div>
+              <div className="flex justify-center">
+                <button
+                  onClick={() => {
+                    setShowNestedOptions(false);
+                    setNestedOptionsFor(null);
+                  }}
+                  className="text-sm text-slate-500 hover:text-slate-700 underline"
+                >
+                  Back to education levels
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div ref={messagesEndRef} />
       </div>
