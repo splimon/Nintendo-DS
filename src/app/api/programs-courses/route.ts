@@ -41,6 +41,7 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const query = searchParams.get("q")?.toLowerCase() || "";
     const campus = searchParams.get("campus") || "";
+    const limit = parseInt(searchParams.get("limit") || "100", 10); // Default to 100, respect URL param
 
     if (!query) {
       return NextResponse.json({
@@ -136,11 +137,12 @@ export async function GET(req: Request) {
 
     console.log(`[Programs-Courses API] Found ${results.length} matching courses`);
 
-    // return top 20 results
+    // Return courses up to the specified limit
     return NextResponse.json({
       success: true,
       total: results.length,
-      results: results.slice(0, 20),
+      returned: Math.min(results.length, limit),
+      results: results.slice(0, limit),
     });
   } catch (err: unknown) {
     console.error("Error in /api/programs-courses:", err);

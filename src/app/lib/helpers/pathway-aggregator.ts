@@ -239,6 +239,49 @@ export function aggregateCollegePrograms(
 ): AggregatedCollegeProgram[] {
   console.log(`[Aggregator] Starting aggregation of ${programs.length} college program entries`);
   
+  // List of campuses that have actual course data files
+  // Windward Community College is excluded because we don't have course data for it
+  const CAMPUSES_WITH_COURSE_DATA = [
+    "Hawaii Community College",
+    "Hawai'i Community College",
+    "University of Hawaii at Hilo",
+    "University of Hawai'i at Hilo",
+    "Honolulu Community College",
+    "Kapiolani Community College",
+    "Kapi'olani Community College",
+    "Kauai Community College",
+    "Kaua'i Community College",
+    "Leeward Community College",
+    "University of Hawaii at Manoa",
+    "University of Hawai'i at Mānoa",
+    "University of Hawaii Maui College",
+    "University of Hawai'i Maui College",
+    "Pacific Center for Advanced Technology Training (PCATT)",
+    "University of Hawaii at West Oahu",
+    "University of Hawai'i at West Oahu",
+    "University of Hawai'i – West O'ahu",
+  ];
+
+  // Helper function to check if a campus has course data
+  const hasCourseData = (campus: string): boolean => {
+    const normalized = campus.toLowerCase()
+      .replace(/[ʻ''']/g, "")
+      .replace(/[āáàäâ]/g, "a")
+      .replace(/[–—-]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    
+    return CAMPUSES_WITH_COURSE_DATA.some(validCampus => {
+      const validNormalized = validCampus.toLowerCase()
+        .replace(/[ʻ''']/g, "")
+        .replace(/[āáàäâ]/g, "a")
+        .replace(/[–—-]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+      return normalized === validNormalized;
+    });
+  };
+  
   // Group by CIP code since that's the real identifier
   const cipMap = new Map<
     string,
@@ -252,6 +295,15 @@ export function aggregateCollegePrograms(
 
   for (const { program, campuses } of programs) {
     const cipCode = program.CIP_CODE;
+
+    // Filter out campuses that don't have course data files
+    const validCampuses = campuses.filter(hasCourseData);
+    
+    // Skip this program entry if no valid campuses remain
+    if (validCampuses.length === 0) {
+      console.log(`[Aggregator] ⚠️ Skipping CIP ${cipCode}: No campuses with course data`);
+      continue;
+    }
 
     // Handle both single strings and arrays of program names
     const programNames = Array.isArray(program.PROGRAM_NAME)
@@ -271,7 +323,7 @@ export function aggregateCollegePrograms(
         cipCode,
         programFamily: baseName,
         allProgramNames: new Set(programNames),
-        campuses: new Set(campuses),
+        campuses: new Set(validCampuses),
       });
     } else {
       // Already seen this CIP - merge data
@@ -284,11 +336,11 @@ export function aggregateCollegePrograms(
         programNames.forEach((name: string) => existing.allProgramNames.add(name));
       }
       
-      // Merge campuses
-      const newCampuses = campuses.filter(c => !existing.campuses.has(c));
+      // Merge only valid campuses
+      const newCampuses = validCampuses.filter(c => !existing.campuses.has(c));
       if (newCampuses.length > 0) {
         console.log(`[Aggregator] → CIP ${cipCode}: Adding ${newCampuses.length} new campuses`);
-        campuses.forEach(c => existing.campuses.add(c));
+        newCampuses.forEach(c => existing.campuses.add(c));
       }
     }
   }
