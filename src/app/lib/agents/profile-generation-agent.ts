@@ -173,8 +173,8 @@ HOW TO REFER TO THE PERSON IN THE SUMMARY:
 ${structuredAnswers ? `
 SPECIAL INSTRUCTIONS FOR STRUCTURED DATA:
 - INTERESTS: Parse "${structuredAnswers.interests}" into specific fields
-- SKILLS: Parse "${structuredAnswers.skills}" - categorize into technical skills (coding, programming languages) and soft skills (communication, leadership)
-- EXPERIENCES: "${structuredAnswers.experiences}" - use this to determine experienceLevel
+- SKILLS: Parse "${structuredAnswers.skills}" - Split into an array of individual skills (e.g., "Programming (Python, JavaScript), Database Management" → ["Programming", "Python", "JavaScript", "Database Management", etc.])
+- EXPERIENCES: "${structuredAnswers.experiences}" - Split into an array of individual experiences AND determine experienceLevel enum
 - EDUCATION LEVEL: "${structuredAnswers.educationLevel}" - THIS IS EXPLICITLY PROVIDED. Map it to educationLevel enum EXACTLY:
   * If contains "high school" → "high_school"
   * If contains "freshman" → "college_freshman"
@@ -233,8 +233,9 @@ EXAMPLE:
     "supportNeeds": ["What they need help with: 'career exploration', 'finding programs', 'financial aid', 'study skills', 'networking', etc."],
     
     "learningStyle": "hands_on|visual|analytical|collaborative|independent|mixed|null",
-    "skillsToImprove": ["Specific skills they want to develop: 'public speaking', 'computer skills', 'time management', 'math', etc."],
+    "skillsToImprove": ["Specific skills from structured answers if provided, otherwise skills they want to develop: 'public speaking', 'computer skills', 'Python', 'JavaScript', 'Database Management', etc."],
     "experienceLevel": "no_experience|some_volunteering|part_time_jobs|internships|entry_level|experienced|null",
+    "experiences": ["Specific experiences from structured answers if provided: 'Completed internship at tech company', 'Built multiple projects', 'Contributed to open-source projects', etc."],
     
     "familyInfluence": "very_supportive|supportive|neutral|pressuring|discouraging|mixed|null",
     "culturalBackground": "local_hawaiian|mainland_transplant|military_family|immigrant_family|mixed|null",
@@ -296,6 +297,35 @@ IMPORTANT GUIDELINES:
       throw new Error("Invalid profile structure - missing required fields");
     }
 
+    // Ensure experiences field exists and is an array
+    if (!parsed.extracted.experiences) {
+      parsed.extracted.experiences = [];
+    } else if (!Array.isArray(parsed.extracted.experiences)) {
+      // If it's a string, try to split it
+      if (typeof parsed.extracted.experiences === 'string') {
+        parsed.extracted.experiences = parsed.extracted.experiences
+          .split(',')
+          .map((exp: string) => exp.trim())
+          .filter((exp: string) => exp.length > 0);
+      } else {
+        parsed.extracted.experiences = [];
+      }
+    }
+
+    // Ensure skillsToImprove exists and is an array
+    if (!parsed.extracted.skillsToImprove) {
+      parsed.extracted.skillsToImprove = [];
+    } else if (!Array.isArray(parsed.extracted.skillsToImprove)) {
+      if (typeof parsed.extracted.skillsToImprove === 'string') {
+        parsed.extracted.skillsToImprove = parsed.extracted.skillsToImprove
+          .split(',')
+          .map((skill: string) => skill.trim())
+          .filter((skill: string) => skill.length > 0);
+      } else {
+        parsed.extracted.skillsToImprove = [];
+      }
+    }
+
     // Ensure confidence scores are reasonable
     parsed.confidence.overall = Math.max(
       0,
@@ -340,6 +370,7 @@ Return JSON with summary in ENGLISH as plain text:
     "supportNeeds": [],
     "skillsToImprove": [],
     "experienceLevel": null,
+    "experiences": [],
     "familyInfluence": null,
     "culturalBackground": null,
     "financialSituation": null,

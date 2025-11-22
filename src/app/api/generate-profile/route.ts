@@ -84,8 +84,13 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("[Generate Profile API] ❌ Error:", error);
+    console.error("[Generate Profile API] ❌ Error stack:", error instanceof Error ? error.stack : 'No stack trace');
+    console.error("[Generate Profile API] ❌ Error message:", error instanceof Error ? error.message : String(error));
     return NextResponse.json(
-      { error: "Internal server error" },
+      { 
+        error: "Failed to generate profile",
+        details: error instanceof Error ? error.message : String(error)
+      },
       { status: 500 }
     );
   }

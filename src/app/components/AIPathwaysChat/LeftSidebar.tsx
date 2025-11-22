@@ -245,103 +245,136 @@ export default function LeftSidebar({
                 {/* Divider */}
                 {/* <div className="border-t border-gray-100" /> */}
 
-                {/* Highlights */}
-                {completeness.highlights.length > 0 && (
-                  <div>
-                    <h4 className="font-semibold text-black text-xs mb-3">
-                      HIGHLIGHTS
-                    </h4>
-                    <div className="space-y-2">
-                      {completeness.highlights.map((highlight, idx) => (
-                        <div key={idx} className="flex items-center gap-2">
-                          <div className="w-1 h-1 bg-black rounded-full" />
-                          <span className="text-xs text-gray-700">
-                            {highlight}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Key Information */}
-                <div>
-                  <h4 className="font-semibold text-black text-xs mb-3">
-                    INFORMATION
-                  </h4>
-
-                  <div className="space-y-2 text-xs">
-                    {userProfile.extracted?.educationLevel &&
-                      userProfile.extracted.educationLevel !== "null" && (
-                        <div className="flex items-center gap-2 text-gray-700">
-                          <User className="w-3 h-3" />
-                          <span>
-                            {userProfile.extracted.educationLevel.replace(
-                              /_/g,
-                              " "
-                            )}
-                          </span>
-                        </div>
-                      )}
-
-                    {userProfile.extracted?.location &&
-                      userProfile.extracted.location !== "null" && (
-                        <div className="flex items-center gap-2 text-gray-700">
-                          <MapPin className="w-3 h-3" />
-                          <span>
-                            {userProfile.extracted.location.replace(/_/g, " ")}
-                          </span>
-                        </div>
-                      )}
-
-                    {userProfile.extracted?.timeline &&
-                      userProfile.extracted.timeline !== "null" && (
-                        <div className="flex items-center gap-2 text-gray-700">
-                          <Clock className="w-3 h-3" />
-                          <span>
-                            {userProfile.extracted.timeline.replace(/_/g, " ")}
-                          </span>
-                        </div>
-                      )}
-
-                    {userProfile.extracted?.careerGoals &&
-                      userProfile.extracted.careerGoals.length > 0 && (
-                        <div className="flex items-center gap-2 text-gray-700">
-                          <Target className="w-3 h-3" />
-                          <span>
-                            {userProfile.extracted.careerGoals.length} career
-                            goal
-                            {userProfile.extracted.careerGoals.length > 1
-                              ? "s"
-                              : ""}
-                          </span>
-                        </div>
-                      )}
-                  </div>
-                </div>
-
-                {/* Areas for Improvement */}
-                {completeness.nextSteps.length > 0 &&
-                  completeness.score < 90 && (
-                    <>
-                      <div className="border-t border-gray-100" />
+                {/* Profile Information - Comprehensive Display */}
+                {userProfile.extracted && (
+                  <div className="space-y-4">
+                    {/* Interests Section */}
+                    {userProfile.extracted.interests && 
+                     userProfile.extracted.interests.length > 0 && (
                       <div>
-                        <h4 className="font-semibold text-black text-xs mb-3">
-                          COULD EXPLORE
+                        <h4 className="font-semibold text-black text-xs mb-2.5">
+                          INTERESTS
                         </h4>
-                        <div className="space-y-2">
-                          {completeness.nextSteps.map((step, idx) => (
-                            <div key={idx} className="flex items-center gap-2">
-                              <div className="w-1 h-1 bg-gray-400 rounded-full" />
-                              <span className="text-xs text-gray-600">
-                                {step}
-                              </span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {userProfile.extracted.interests.map((interest, idx) => (
+                            <span
+                              key={idx}
+                              className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded-md"
+                            >
+                              {interest}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Skills Section */}
+                    {userProfile.extracted.skillsToImprove && 
+                     userProfile.extracted.skillsToImprove.length > 0 && (
+                      <div>
+                        <h4 className="font-semibold text-black text-xs mb-2.5">
+                          SKILLS
+                        </h4>
+                        <div className="flex flex-wrap gap-1.5">
+                          {userProfile.extracted.skillsToImprove.map((skill, idx) => (
+                            <span
+                              key={idx}
+                              className="px-2 py-1 bg-purple-50 text-purple-700 text-xs rounded-md"
+                            >
+                              {skill}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Education Level Section */}
+                    {userProfile.extracted.educationLevel &&
+                      userProfile.extracted.educationLevel !== "null" && (
+                      <div>
+                        <h4 className="font-semibold text-black text-xs mb-2.5">
+                          EDUCATION LEVEL
+                        </h4>
+                        <div className="flex items-center gap-2 text-gray-700">
+                          <User className="w-3.5 h-3.5" />
+                          <span className="text-sm font-medium">
+                            {userProfile.extracted.educationLevel
+                              .replace(/_/g, " ")
+                              .replace(/\b\w/g, (l) => l.toUpperCase())}
+                          </span>
+                        </div>
+                        {userProfile.extracted.gradeLevel && (
+                          <p className="text-xs text-gray-600 mt-1 ml-5">
+                            Grade {userProfile.extracted.gradeLevel}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Experiences Section */}
+                    {userProfile.extracted.experiences && 
+                     userProfile.extracted.experiences.length > 0 && (
+                      <div>
+                        <h4 className="font-semibold text-black text-xs mb-2.5">
+                          EXPERIENCES
+                        </h4>
+                        <div className="space-y-1.5">
+                          {userProfile.extracted.experiences.map((experience, idx) => (
+                            <div key={idx} className="flex items-start gap-2">
+                              <div className="w-1.5 h-1.5 bg-green-500 rounded-full mt-1 flex-shrink-0" />
+                              <span className="text-xs text-gray-700">{experience}</span>
                             </div>
                           ))}
                         </div>
                       </div>
-                    </>
-                  )}
+                    )}
+
+                    {/* Career Goals Section */}
+                    {userProfile.extracted.careerGoals &&
+                     userProfile.extracted.careerGoals.length > 0 && (
+                      <div>
+                        <h4 className="font-semibold text-black text-xs mb-2.5">
+                          CAREER GOALS
+                        </h4>
+                        <div className="space-y-1.5">
+                          {userProfile.extracted.careerGoals.map((goal, idx) => (
+                            <div key={idx} className="flex items-start gap-2">
+                              <Target className="w-3.5 h-3.5 text-green-600 mt-0.5 flex-shrink-0" />
+                              <span className="text-xs text-gray-700">{goal}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Location & Timeline - Compact Info */}
+                    {(userProfile.extracted.location || userProfile.extracted.timeline) && (
+                      <div>
+                        <h4 className="font-semibold text-black text-xs mb-2.5">
+                          PREFERENCES
+                        </h4>
+                        <div className="space-y-2">
+                          {userProfile.extracted.location && userProfile.extracted.location !== "null" && (
+                            <div className="flex items-center gap-2 text-gray-700">
+                              <MapPin className="w-3.5 h-3.5" />
+                              <span className="text-xs">
+                                {userProfile.extracted.location.replace(/_/g, " ")}
+                              </span>
+                            </div>
+                          )}
+                          {userProfile.extracted.timeline && userProfile.extracted.timeline !== "null" && (
+                            <div className="flex items-center gap-2 text-gray-700">
+                              <Clock className="w-3.5 h-3.5" />
+                              <span className="text-xs">
+                                {userProfile.extracted.timeline.replace(/_/g, " ")}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </>
             )}
           </div>
@@ -364,14 +397,14 @@ export default function LeftSidebar({
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-xs text-gray-600">Progress</span>
                   <span className="text-xs text-black font-semibold">
-                    {userMessageCount}/3
+                    {userMessageCount}/5
                   </span>
                 </div>
                 <div className="w-full bg-gray-100 rounded-full h-1.5">
                   <div
                     className="bg-black h-1.5 rounded-full transition-all duration-500"
                     style={{
-                      width: `${Math.min(100, (userMessageCount / 3) * 100)}%`,
+                      width: `${Math.min(100, (userMessageCount / 5) * 100)}%`,
                     }}
                   />
                 </div>

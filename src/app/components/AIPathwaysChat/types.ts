@@ -80,6 +80,7 @@ export interface ExtractedProfile {
   learningStyle?: string;
   skillsToImprove: string[];
   experienceLevel: string | null;
+  experiences: string[]; // Added: List of specific experiences mentioned
 
   // Context and background
   familyInfluence?: string;
